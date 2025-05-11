@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>Прохождение оценки</h2>
+    
+    <div class="list-group">
+        {% for block in blocks %}
+        <a href="{{ url_for('submit_assessment_block', block_id=block.id) }}" class="list-group-item list-group-item-action">
+            <div class="d-flex w-100 justify-content-between">
+                <h5 class="mb-1">{{ block.name }}</h5>
+                <small>Вес: {{ block.weight }}</small>
+            </div>
+            <p class="mb-1">{{ block.description }}</p>
+        </a>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %} 

@@ -1,0 +1,249 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>{% if question %}Редактировать вопрос{% else %}Добавить вопрос{% endif %}</h2>
+    <p>Блок: {{ block.name }}</p>
+    
+    <form method="post">
+        <div class="form-group">
+            <label for="type">Тип вопроса</label>
+            <select class="form-control" id="type" name="type" required>
+                <option value="single" {% if question and question.type == 'single' %}selected{% endif %}>Один ответ</option>
+                <option value="multiple" {% if question and question.type == 'multiple' %}selected{% endif %}>Несколько ответов</option>
+                <option value="open" {% if question and question.type == 'open' %}selected{% endif %}>Открытый ответ</option>
+                <option value="code" {% if question and question.type == 'code' %}selected{% endif %}>Код</option>
+                <option value="matching" {% if question and question.type == 'matching' %}selected{% endif %}>Сопоставление</option>
+            </select>
+        </div>
+        
+        <div class="form-group">
+            <label for="text">Текст вопроса</label>
+            <textarea class="form-control" id="text" name="text" rows="3" required>{{ question.text if question else '' }}</textarea>
+        </div>
+        
+        <div class="form-group">
+            <label for="points">Баллы</label>
+            <input type="number" class="form-control" id="points" name="points" step="0.1" value="{{ question.points if question else '' }}" required>
+        </div>
+        
+        <div id="options-container" style="display: none;">
+            <div class="form-group">
+                <label>Варианты ответов</label>
+                <div id="options-list">
+                    {% if question and question.type in ['single', 'multiple'] %}
+                        {% for option in question.get_options() %}
+                        <div class="input-group mb-2">
+                            <input type="text" class="form-control" name="options[]" value="{{ option }}" required>
+                            <div class="input-group-append">
+                                <button type="button" class="btn btn-danger remove-option">Удалить</button>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    {% endif %}
+                </div>
+                <button type="button" class="btn btn-secondary" id="add-option">Добавить вариант</button>
+            </div>
+            
+            <div class="form-group">
+                <label>Правильные ответы</label>
+                <div id="correct-answers-list">
+                    {% if question and question.type in ['single', 'multiple'] %}
+                        {% for answer in question.get_correct_answers() %}
+                        <div class="input-group mb-2">
+                            <input type="text" class="form-control" name="correct_answers[]" value="{{ answer }}" required>
+                            <div class="input-group-append">
+                                <button type="button" class="btn btn-danger remove-answer">Удалить</button>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    {% endif %}
+                </div>
+                <button type="button" class="btn btn-secondary" id="add-correct-answer">Добавить правильный ответ</button>
+            </div>
+        </div>
+        
+        <div id="code-container" style="display: none;">
+            <div class="form-group">
+                <label for="code_template">Шаблон кода</label>
+                <textarea class="form-control" id="code_template" name="code_template" rows="5">{{ question.code_template if question else '' }}</textarea>
+            </div>
+            
+            <div class="form-group">
+                <label>Тестовые случаи</label>
+                <div id="test-cases-list">
+                    {% if question and question.type == 'code' %}
+                        {% for test_case in question.get_test_cases() %}
+                        <div class="input-group mb-2">
+                            <input type="text" class="form-control" name="test_cases[]" value="{{ test_case }}" required>
+                            <div class="input-group-append">
+                                <button type="button" class="btn btn-danger remove-test-case">Удалить</button>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    {% endif %}
+                </div>
+                <button type="button" class="btn btn-secondary" id="add-test-case">Добавить тестовый случай</button>
+            </div>
+        </div>
+        
+        <div id="open-answer-container" style="display: none;">
+            <div class="form-group">
+                <label for="correct_answer">Правильный ответ</label>
+                <input type="text" class="form-control" id="correct_answer" name="correct_answer" value="{{ question.get_correct_answers()[0] if question and question.type == 'open' else '' }}">
+            </div>
+        </div>
+
+        <div id="matching-container" style="display: none;">
+            <div class="form-group">
+                <label>Определения</label>
+                <div id="definitions-list">
+                    {% if question and question.type == 'matching' %}
+                        {% set definitions = question.get_definitions() %}
+                        {% for definition in definitions %}
+                        <div class="input-group mb-2">
+                            <input type="text" class="form-control" name="definitions[]" value="{{ definition }}" required>
+                            <div class="input-group-append">
+                                <button type="button" class="btn btn-danger remove-definition">Удалить</button>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    {% endif %}
+                </div>
+                <button type="button" class="btn btn-secondary" id="add-definition">Добавить определение</button>
+            </div>
+
+            <div class="form-group mt-3">
+                <label>Термины</label>
+                <div id="terms-list">
+                    {% if question and question.type == 'matching' %}
+                        {% set terms = question.get_terms() %}
+                        {% for term in terms %}
+                        <div class="input-group mb-2">
+                            <input type="text" class="form-control" name="terms[]" value="{{ term }}" required>
+                            <div class="input-group-append">
+                                <button type="button" class="btn btn-danger remove-term">Удалить</button>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    {% endif %}
+                </div>
+                <button type="button" class="btn btn-secondary" id="add-term">Добавить термин</button>
+            </div>
+
+            <div class="form-group mt-3">
+                <label>Правильные соответствия</label>
+                <div id="correct-matches-list">
+                    {% if question and question.type == 'matching' %}
+                        {% set correct_matches = question.get_correct_matches() %}
+                        {% for match in correct_matches %}
+                        <div class="input-group mb-2">
+                            <select class="form-control" name="correct_matches[]" required>
+                                {% for term in question.get_terms() %}
+                                <option value="{{ loop.index0 }}" {% if match == loop.index0 %}selected{% endif %}>{{ term }}</option>
+                                {% endfor %}
+                            </select>
+                            <div class="input-group-append">
+                                <button type="button" class="btn btn-danger remove-match">Удалить</button>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <button type="submit" class="btn btn-primary">{% if question %}Обновить{% else %}Добавить{% endif %}</button>
+        <a href="{{ url_for('assessment_questions', block_id=block.id) }}" class="btn btn-secondary">Отмена</a>
+    </form>
+</div>
+
+<script>
+document.getElementById('type').addEventListener('change', function() {
+    const type = this.value;
+    document.getElementById('options-container').style.display = type === 'single' || type === 'multiple' ? 'block' : 'none';
+    document.getElementById('code-container').style.display = type === 'code' ? 'block' : 'none';
+    document.getElementById('open-answer-container').style.display = type === 'open' ? 'block' : 'none';
+    document.getElementById('matching-container').style.display = type === 'matching' ? 'block' : 'none';
+});
+
+document.getElementById('add-option').addEventListener('click', function() {
+    const div = document.createElement('div');
+    div.className = 'input-group mb-2';
+    div.innerHTML = `
+        <input type="text" class="form-control" name="options[]" required>
+        <div class="input-group-append">
+            <button type="button" class="btn btn-danger remove-option">Удалить</button>
+        </div>
+    `;
+    document.getElementById('options-list').appendChild(div);
+});
+
+document.getElementById('add-correct-answer').addEventListener('click', function() {
+    const div = document.createElement('div');
+    div.className = 'input-group mb-2';
+    div.innerHTML = `
+        <input type="text" class="form-control" name="correct_answers[]" required>
+        <div class="input-group-append">
+            <button type="button" class="btn btn-danger remove-answer">Удалить</button>
+        </div>
+    `;
+    document.getElementById('correct-answers-list').appendChild(div);
+});
+
+document.getElementById('add-test-case').addEventListener('click', function() {
+    const div = document.createElement('div');
+    div.className = 'input-group mb-2';
+    div.innerHTML = `
+        <input type="text" class="form-control" name="test_cases[]" required>
+        <div class="input-group-append">
+            <button type="button" class="btn btn-danger remove-test-case">Удалить</button>
+        </div>
+    `;
+    document.getElementById('test-cases-list').appendChild(div);
+});
+
+document.getElementById('add-definition').addEventListener('click', function() {
+    const div = document.createElement('div');
+    div.className = 'input-group mb-2';
+    div.innerHTML = `
+        <input type="text" class="form-control" name="definitions[]" required>
+        <div class="input-group-append">
+            <button type="button" class="btn btn-danger remove-definition">Удалить</button>
+        </div>
+    `;
+    document.getElementById('definitions-list').appendChild(div);
+});
+
+document.getElementById('add-term').addEventListener('click', function() {
+    const div = document.createElement('div');
+    div.className = 'input-group mb-2';
+    div.innerHTML = `
+        <input type="text" class="form-control" name="terms[]" required>
+        <div class="input-group-append">
+            <button type="button" class="btn btn-danger remove-term">Удалить</button>
+        </div>
+    `;
+    document.getElementById('terms-list').appendChild(div);
+});
+
+document.addEventListener('click', function(e) {
+    if (e.target.classList.contains('remove-option')) {
+        e.target.closest('.input-group').remove();
+    } else if (e.target.classList.contains('remove-answer')) {
+        e.target.closest('.input-group').remove();
+    } else if (e.target.classList.contains('remove-test-case')) {
+        e.target.closest('.input-group').remove();
+    } else if (e.target.classList.contains('remove-definition')) {
+        e.target.closest('.input-group').remove();
+    } else if (e.target.classList.contains('remove-term')) {
+        e.target.closest('.input-group').remove();
+    } else if (e.target.classList.contains('remove-match')) {
+        e.target.closest('.input-group').remove();
+    }
+});
+
+// Trigger change event on page load
+document.getElementById('type').dispatchEvent(new Event('change'));
+</script>
+{% endblock %} 

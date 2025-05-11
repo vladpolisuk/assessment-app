@@ -1,0 +1,159 @@
+{% extends "base.html" %}
+
+{% block title %}Оценка кода{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="card mb-4">
+        <div class="card-header">
+            <h3>Оценка кода</h3>
+            <p class="text-muted">{{ question.text }}</p>
+        </div>
+        <div class="card-body">
+            <div class="code-container mb-4">
+                <pre><code class="language-javascript">{{ code }}</code></pre>
+            </div>
+
+            {% if test_results %}
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h4>Результаты тестов</h4>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Тест</th>
+                                    <th>Статус</th>
+                                    <th>Сообщение</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for test in test_results %}
+                                <tr class="{% if test.success %}table-success{% else %}table-danger{% endif %}">
+                                    <td>{{ loop.index }}</td>
+                                    <td>
+                                        {% if test.success %}
+                                        <span class="badge bg-success">Успешно</span>
+                                        {% else %}
+                                        <span class="badge bg-danger">Ошибка</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ test.message }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            {% if example_solutions %}
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h4>Примеры решений</h4>
+                </div>
+                <div class="card-body">
+                    {% for solution in example_solutions %}
+                    <div class="example-solution mb-3">
+                        <pre><code class="language-javascript">{{ solution }}</code></pre>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+
+            <form method="POST">
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h4>Критерии оценки</h4>
+                    </div>
+                    <div class="card-body">
+                        <div class="form-group mb-3">
+                            <label for="score">Баллы (0-{{ question.points }}):</label>
+                            <input type="number" class="form-control" id="score" name="score" 
+                                   min="0" max="{{ question.points }}" step="0.5" required
+                                   value="{{ existing_evaluation.score if existing_evaluation else '' }}">
+                            <small class="form-text text-muted">
+                                Максимальный балл: {{ question.points }}
+                            </small>
+                        </div>
+                        <div class="form-group mb-3">
+                            <label for="comments">Комментарии:</label>
+                            <textarea class="form-control" id="comments" name="comments" rows="4" required
+                                      placeholder="Опишите сильные и слабые стороны решения, предложите улучшения">{{ existing_evaluation.comments if existing_evaluation else '' }}</textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="d-flex justify-content-between">
+                    <a href="{{ url_for('expert_code_evaluations') }}" class="btn btn-secondary">
+                        <i class="bi bi-arrow-left"></i> Назад
+                    </a>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-save"></i> Сохранить оценку
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    {% if previous_evaluations %}
+    <div class="card mb-4">
+        <div class="card-header">
+            <h4>Предыдущие оценки</h4>
+        </div>
+        <div class="card-body">
+            {% for evaluation in previous_evaluations %}
+            <div class="mb-3 p-3 border rounded">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <h5 class="mb-0">Оценка от {{ evaluation.expert.username }}</h5>
+                    <span class="badge bg-primary">{{ evaluation.score }} баллов</span>
+                </div>
+                <p class="mb-2">{{ evaluation.comments }}</p>
+                <small class="text-muted">{{ evaluation.date.strftime('%Y-%m-%d %H:%M:%S') }}</small>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+{% block styles %}
+<link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.24.1/themes/prism.min.css" rel="stylesheet" />
+<style>
+    .code-container {
+        max-height: 400px;
+        overflow-y: auto;
+        background: #f5f5f5;
+        border-radius: 4px;
+        padding: 15px;
+    }
+    .code-container pre {
+        margin: 0;
+        padding: 0;
+    }
+    .code-container code {
+        font-family: 'Fira Code', monospace;
+        font-size: 14px;
+        line-height: 1.5;
+    }
+    .example-solution {
+        background: #f8f9fa;
+        padding: 15px;
+        border-radius: 4px;
+    }
+    .table th {
+        background-color: #f8f9fa;
+    }
+</style>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.24.1/prism.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.24.1/components/prism-javascript.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.24.1/components/prism-python.min.js"></script>
+{% endblock %}
+{% endblock %} 

@@ -1,0 +1,236 @@
+{% extends "base.html" %}
+
+{% block title %}Редактировать вопрос - Сайт Викторин{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row mb-4">
+        <div class="col">
+            <h2>{% if question %}Редактирование вопроса{% else %}Добавление вопроса{% endif %}</h2>
+            <p class="text-muted">Блок: {{ block.name }}</p>
+        </div>
+        <div class="col text-right">
+            <a href="{{ url_for('assessment_questions', block_id=block.id) }}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> Назад
+            </a>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-body">
+            <form method="POST">
+                <div class="form-group">
+                    <label for="type">Тип вопроса</label>
+                    <select class="form-control" id="type" name="type" required>
+                        <option value="single" {% if question and question.type == 'single' %}selected{% endif %}>
+                            Одиночный выбор
+                        </option>
+                        <option value="multiple" {% if question and question.type == 'multiple' %}selected{% endif %}>
+                            Множественный выбор
+                        </option>
+                        <option value="code" {% if question and question.type == 'code' %}selected{% endif %}>
+                            Код
+                        </option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="text">Текст вопроса</label>
+                    <textarea class="form-control" id="text" name="text" rows="3" required>{{ question.text if question else '' }}</textarea>
+                </div>
+
+                <div class="form-group">
+                    <label for="points">Баллы</label>
+                    <input type="number" class="form-control" id="points" name="points" 
+                           min="1" value="{{ question.points if question else '1' }}" required>
+                </div>
+
+                <!-- Поля для вопросов с выбором -->
+                <div id="choice_fields" style="display: none;">
+                    <div class="form-group">
+                        <label>Варианты ответов</label>
+                        <div id="options_container">
+                            {% if question and question.type in ['single', 'multiple'] %}
+                                {% set options = question.options|from_json %}
+                                {% for option in options %}
+                                <div class="input-group mb-2">
+                                    <input type="text" class="form-control" name="options[]" value="{{ option }}" required>
+                                    <div class="input-group-append">
+                                        <button class="btn btn-outline-danger remove-option" type="button">
+                                            <i class="fas fa-times"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            {% else %}
+                                <div class="input-group mb-2">
+                                    <input type="text" class="form-control" name="options[]" required>
+                                    <div class="input-group-append">
+                                        <button class="btn btn-outline-danger remove-option" type="button">
+                                            <i class="fas fa-times"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            {% endif %}
+                        </div>
+                        <button type="button" class="btn btn-outline-primary mt-2" id="add_option">
+                            <i class="fas fa-plus"></i> Добавить вариант
+                        </button>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Правильные ответы</label>
+                        <div id="correct_answers_container">
+                            {% if question and question.type in ['single', 'multiple'] %}
+                                {% set correct_answers = question.correct_answer|from_json %}
+                                {% for answer in correct_answers %}
+                                <div class="input-group mb-2">
+                                    <input type="text" class="form-control" name="correct_answers[]" value="{{ answer }}" required>
+                                    <div class="input-group-append">
+                                        <button class="btn btn-outline-danger remove-answer" type="button">
+                                            <i class="fas fa-times"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            {% else %}
+                                <div class="input-group mb-2">
+                                    <input type="text" class="form-control" name="correct_answers[]" required>
+                                    <div class="input-group-append">
+                                        <button class="btn btn-outline-danger remove-answer" type="button">
+                                            <i class="fas fa-times"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            {% endif %}
+                        </div>
+                        <button type="button" class="btn btn-outline-primary mt-2" id="add_correct_answer">
+                            <i class="fas fa-plus"></i> Добавить правильный ответ
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Поля для вопросов с кодом -->
+                <div id="code_fields" style="display: none;">
+                    <div class="form-group">
+                        <label for="code_template">Шаблон кода</label>
+                        <textarea class="form-control" id="code_template" name="code_template" 
+                                  rows="5">{{ question.code_template if question else '' }}</textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Тестовые случаи</label>
+                        <div id="test_cases_container">
+                            {% if question and question.type == 'code' %}
+                                {% set test_cases = question.test_cases|from_json %}
+                                {% for test_case in test_cases %}
+                                <div class="input-group mb-2">
+                                    <input type="text" class="form-control" name="test_cases[]" value="{{ test_case }}" required>
+                                    <div class="input-group-append">
+                                        <button class="btn btn-outline-danger remove-test-case" type="button">
+                                            <i class="fas fa-times"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            {% else %}
+                                <div class="input-group mb-2">
+                                    <input type="text" class="form-control" name="test_cases[]" required>
+                                    <div class="input-group-append">
+                                        <button class="btn btn-outline-danger remove-test-case" type="button">
+                                            <i class="fas fa-times"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            {% endif %}
+                        </div>
+                        <button type="button" class="btn btn-outline-primary mt-2" id="add_test_case">
+                            <i class="fas fa-plus"></i> Добавить тестовый случай
+                        </button>
+                    </div>
+                </div>
+
+                <div class="text-center mt-4">
+                    <button type="submit" class="btn btn-primary btn-lg">
+                        {% if question %}Сохранить изменения{% else %}Добавить вопрос{% endif %}
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const typeSelect = document.getElementById('type');
+    const choiceFields = document.getElementById('choice_fields');
+    const codeFields = document.getElementById('code_fields');
+    
+    function updateFields() {
+        const type = typeSelect.value;
+        choiceFields.style.display = type === 'single' || type === 'multiple' ? 'block' : 'none';
+        codeFields.style.display = type === 'code' ? 'block' : 'none';
+    }
+    
+    typeSelect.addEventListener('change', updateFields);
+    updateFields();
+    
+    // Обработчики для динамического добавления/удаления полей
+    document.getElementById('add_option').addEventListener('click', function() {
+        const container = document.getElementById('options_container');
+        const div = document.createElement('div');
+        div.className = 'input-group mb-2';
+        div.innerHTML = `
+            <input type="text" class="form-control" name="options[]" required>
+            <div class="input-group-append">
+                <button class="btn btn-outline-danger remove-option" type="button">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+        `;
+        container.appendChild(div);
+    });
+    
+    document.getElementById('add_correct_answer').addEventListener('click', function() {
+        const container = document.getElementById('correct_answers_container');
+        const div = document.createElement('div');
+        div.className = 'input-group mb-2';
+        div.innerHTML = `
+            <input type="text" class="form-control" name="correct_answers[]" required>
+            <div class="input-group-append">
+                <button class="btn btn-outline-danger remove-answer" type="button">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+        `;
+        container.appendChild(div);
+    });
+    
+    document.getElementById('add_test_case').addEventListener('click', function() {
+        const container = document.getElementById('test_cases_container');
+        const div = document.createElement('div');
+        div.className = 'input-group mb-2';
+        div.innerHTML = `
+            <input type="text" class="form-control" name="test_cases[]" required>
+            <div class="input-group-append">
+                <button class="btn btn-outline-danger remove-test-case" type="button">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+        `;
+        container.appendChild(div);
+    });
+    
+    // Обработчики для удаления полей
+    document.addEventListener('click', function(e) {
+        if (e.target.classList.contains('remove-option')) {
+            e.target.closest('.input-group').remove();
+        } else if (e.target.classList.contains('remove-answer')) {
+            e.target.closest('.input-group').remove();
+        } else if (e.target.classList.contains('remove-test-case')) {
+            e.target.closest('.input-group').remove();
+        }
+    });
+});
+</script>
+{% endblock %} 

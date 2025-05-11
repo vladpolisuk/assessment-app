@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+
+{% block title %}Викторина{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h2 class="mb-4">Викторина</h2>
+    <form method="POST" action="{{ url_for('submit_quiz') }}">
+        {% for question in questions %}
+            <div class="card mb-4">
+                <div class="card-body">
+                    <h5 class="card-title">{{ question.text }}</h5>
+                    {% if question.image_path %}
+                        <img src="{{ url_for('static', filename='uploads/' + question.image_path) }}" 
+                             class="img-fluid mb-3" alt="Изображение к вопросу">
+                    {% endif %}
+
+                    {% if question.type == 'regular' %}
+                        {% set options = question.get_options() %}
+                        {% set is_multiple = question.get_correct_answers()|length > 1 %}
+                        <div class="list-group">
+                            {% for option in options %}
+                                <label class="list-group-item">
+                                    {% if is_multiple %}
+                                        <input type="checkbox" name="answer_{{ question.id }}[]" 
+                                               value="{{ option }}" class="form-check-input me-2">
+                                    {% else %}
+                                        <input type="radio" name="answer_{{ question.id }}" 
+                                               value="{{ option }}" class="form-check-input me-2" required>
+                                    {% endif %}
+                                    {{ option }}
+                                </label>
+                            {% endfor %}
+                        </div>
+                        {% if is_multiple %}
+                            <small class="text-muted mt-2 d-block">Выберите все правильные ответы</small>
+                        {% endif %}
+                    {% elif question.type == 'association' %}
+                        <div class="mb-3">
+                            <label class="form-label">Введите ваши ассоциации (через запятую)</label>
+                            <textarea class="form-control" name="answer_{{ question.id }}" 
+                                      rows="3" required 
+                                      placeholder="Введите ассоциации через запятую"></textarea>
+                            <small class="text-muted">Требуется минимум {{ question.required_matches }} совпадений</small>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        {% endfor %}
+
+        <button type="submit" class="btn btn-primary">Отправить ответы</button>
+    </form>
+</div>
+{% endblock %} 

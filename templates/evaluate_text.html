@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-8 offset-md-2">
+            <div class="card">
+                <div class="card-header">
+                    <h3>Оценка ответа</h3>
+                </div>
+                <div class="card-body">
+                    <!-- Вопрос -->
+                    <div class="mb-4">
+                        <h4>Вопрос:</h4>
+                        <p>{{ question.text }}</p>
+                    </div>
+
+                    <!-- Ответ пользователя -->
+                    <div class="mb-4">
+                        <h4>Ответ пользователя:</h4>
+                        <div class="card">
+                            <div class="card-body">
+                                {% if question.type == 'open' %}
+                                    {{ user_answer }}
+                                {% elif question.type in ['single', 'multiple'] %}
+                                    {% set options = question.options|from_json %}
+                                    {% if question.type == 'single' %}
+                                        {{ options[user_answer] if user_answer in options else user_answer }}
+                                    {% else %}
+                                        {% set user_answers = user_answer|from_json %}
+                                        {% for answer in user_answers %}
+                                            {{ options[answer] if answer in options else answer }}{% if not loop.last %}, {% endif %}
+                                        {% endfor %}
+                                    {% endif %}
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Форма оценки -->
+                    <form method="POST">
+                        <div class="mb-3">
+                            <label for="score" class="form-label">Оценка (0-10):</label>
+                            <input type="number" class="form-control" id="score" name="score" 
+                                   min="0" max="10" step="0.1" required
+                                   value="{{ existing_evaluation.score if existing_evaluation else '' }}">
+                        </div>
+                        <div class="mb-3">
+                            <label for="comments" class="form-label">Комментарии:</label>
+                            <textarea class="form-control" id="comments" name="comments" rows="4" required>{{ existing_evaluation.comments if existing_evaluation else '' }}</textarea>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Сохранить оценку</button>
+                        <a href="{{ url_for('expert_text_evaluations') }}" class="btn btn-secondary">Назад</a>
+                    </form>
+
+                    <!-- Предыдущие оценки -->
+                    {% if previous_evaluations %}
+                    <div class="mt-4">
+                        <h4>Предыдущие оценки:</h4>
+                        {% for evaluation in previous_evaluations %}
+                        <div class="card mb-2">
+                            <div class="card-body">
+                                <p class="mb-1"><strong>Оценка:</strong> {{ evaluation.score }}</p>
+                                <p class="mb-1"><strong>Комментарии:</strong> {{ evaluation.comments }}</p>
+                                <p class="mb-0 text-muted">
+                                    <small>Дата: {{ evaluation.date.strftime('%d.%m.%Y %H:%M') }}</small>
+                                </p>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

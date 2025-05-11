@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+
+{% block title %}Редактирование блока оценки{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h2>Редактирование блока оценки</h2>
+    <form method="POST">
+        <div class="mb-3">
+            <label for="name" class="form-label">Название блока</label>
+            <input type="text" class="form-control" id="name" name="name" value="{{ block.name }}" required>
+        </div>
+        <div class="mb-3">
+            <label for="weight" class="form-label">Вес блока (от 0 до 1)</label>
+            <input type="number" class="form-control" id="weight" name="weight" step="0.01" min="0" max="1" value="{{ block.weight }}" required>
+        </div>
+        <div class="mb-3">
+            <label for="max_score" class="form-label">Максимальный балл</label>
+            <input type="number" class="form-control" id="max_score" name="max_score" step="0.1" min="0" value="{{ block.max_score }}" required>
+        </div>
+        <div class="mb-3">
+            <label for="description" class="form-label">Описание</label>
+            <textarea class="form-control" id="description" name="description" rows="3">{{ block.description }}</textarea>
+        </div>
+        <button type="submit" class="btn btn-primary">Сохранить изменения</button>
+        <a href="{{ url_for('assessment_blocks') }}" class="btn btn-secondary">Отмена</a>
+    </form>
+</div>
+{% endblock %} 

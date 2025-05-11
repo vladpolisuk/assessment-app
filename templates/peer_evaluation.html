@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+
+{% block title %}Взаимооценка{% endblock %}
+
+{% block styles %}
+<style>
+    .evaluation-table {
+        margin-top: 20px;
+    }
+    .evaluation-table th {
+        background-color: #f8f9fa;
+        vertical-align: middle;
+    }
+    .score-select {
+        width: 100px;
+    }
+    .expert-name {
+        font-weight: 500;
+    }
+    .criteria-cell {
+        min-width: 150px;
+    }
+    .comment-box {
+        width: 100%;
+        min-height: 100px;
+        margin-top: 10px;
+    }
+    .criteria-header {
+        writing-mode: vertical-lr;
+        transform: rotate(180deg);
+        white-space: nowrap;
+        padding: 10px 5px;
+    }
+    .debug-block {
+        background: #f5f5f5;
+        border: 1px solid #ccc;
+        padding: 10px;
+        margin-bottom: 20px;
+        font-size: 14px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2 class="mb-4">Взаимооценка</h2>
+    
+    <div class="card">
+        <div class="card-header">
+            <h4>Оценка экспертов</h4>
+        </div>
+        <div class="card-body">
+            <form method="POST" action="{{ url_for('submit_peer_evaluation') }}">
+                <div class="table-responsive">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Эксперт</th>
+                                <th>Оценка (0-10)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for expert in experts %}
+                            <tr>
+                                <td>{{ expert.username }}</td>
+                                <td>
+                                    <input type="number" 
+                                           class="form-control" 
+                                           name="score_{{ expert.id }}" 
+                                           min="0" 
+                                           max="10" 
+                                           step="0.1"
+                                           value="{{ previous_evaluations[expert.id].score if expert.id in previous_evaluations else '' }}"
+                                           required>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                <button type="submit" class="btn btn-primary">Сохранить оценки</button>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %} 

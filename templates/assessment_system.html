@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>Система оценки</h2>
+    
+    <div class="row">
+        {% for block in blocks %}
+        <div class="col-md-4 mb-4">
+            <div class="card h-100">
+                <div class="card-body">
+                    <h5 class="card-title">{{ block.name }}</h5>
+                    <p class="card-text">{{ block.description }}</p>
+                    <p class="card-text">
+                        <small class="text-muted">
+                            {% if block.name == 'Взаимооценка' %}
+                                Максимальный балл: 100.0<br>
+                            {% else %}
+                                Максимальный балл: {{ block.max_score }}<br>
+                                Количество вопросов: {{ block.questions|length }}
+                            {% endif %}
+                        </small>
+                    </p>
+                    <a href="{{ url_for('submit_assessment_block', block_id=block.id) }}" class="btn btn-primary">
+                        Пройти тест
+                    </a>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    
+    <div class="card mt-4">
+        <div class="card-header bg-dark text-white">
+            <h5 class="card-title mb-0">Информация об оценке</h5>
+        </div>
+        <div class="card-body">
+            <h6>Как проходит оценка:</h6>
+            <ol>
+                <li>Выберите блок для оценки</li>
+                <li>Ответьте на все вопросы в блоке</li>
+                <li>После прохождения всех блоков вы получите итоговую оценку</li>
+                <li>Результаты можно будет посмотреть в профиле</li>
+            </ol>
+            <div class="alert alert-info">
+                <strong>Важно:</strong> Каждый блок имеет свой максимальный балл. 
+                Максимальный балл за все блоки - 100%.
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

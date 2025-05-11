@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>Оценка рабочей группой</h2>
+    <p class="text-muted">Оцените каждого члена рабочей группы по следующим критериям (от 1 до 10):</p>
+
+    <form method="POST" action="{{ url_for('submit_work_group_evaluation') }}">
+        {% for user in users %}
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5>{{ user.username }}</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="competence_{{ user.id }}">Компетентность (23%)</label>
+                            <input type="number" class="form-control" id="competence_{{ user.id }}" 
+                                   name="competence_{{ user.id }}" min="1" max="10" required>
+                            <small class="form-text text-muted">Оценка профессиональных навыков и знаний</small>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="conformity_{{ user.id }}">Конформизм (20%)</label>
+                            <input type="number" class="form-control" id="conformity_{{ user.id }}" 
+                                   name="conformity_{{ user.id }}" min="1" max="10" required>
+                            <small class="form-text text-muted">Склонность следовать групповым нормам</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="row mt-3">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="experience_{{ user.id }}">Опыт (15%)</label>
+                            <input type="number" class="form-control" id="experience_{{ user.id }}" 
+                                   name="experience_{{ user.id }}" min="1" max="10" required>
+                            <small class="form-text text-muted">Уровень практического опыта</small>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="interest_{{ user.id }}">Интерес (12%)</label>
+                            <input type="number" class="form-control" id="interest_{{ user.id }}" 
+                                   name="interest_{{ user.id }}" min="1" max="10" required>
+                            <small class="form-text text-muted">Заинтересованность в работе и развитии</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="row mt-3">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="business_{{ user.id }}">Деловитость (13%)</label>
+                            <input type="number" class="form-control" id="business_{{ user.id }}" 
+                                   name="business_{{ user.id }}" min="1" max="10" required>
+                            <small class="form-text text-muted">Практичность и эффективность в работе</small>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="objectivity_{{ user.id }}">Объективность (17%)</label>
+                            <input type="number" class="form-control" id="objectivity_{{ user.id }}" 
+                                   name="objectivity_{{ user.id }}" min="1" max="10" required>
+                            <small class="form-text text-muted">Способность к объективной оценке</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+        
+        <div class="alert alert-info">
+            <h5>Важно!</h5>
+            <p>Оценки будут учитываться только при достаточной согласованности мнений экспертов (коэффициент конкордации Кенделла ≥ 0.5).</p>
+            <p>Итоговая оценка рассчитывается с учетом весов каждого критерия.</p>
+        </div>
+
+        <button type="submit" class="btn btn-primary">Сохранить оценки</button>
+    </form>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Добавляем валидацию для всех числовых полей
+    const inputs = document.querySelectorAll('input[type="number"]');
+    inputs.forEach(input => {
+        input.addEventListener('input', function() {
+            if (this.value < 1) this.value = 1;
+            if (this.value > 10) this.value = 10;
+        });
+    });
+});
+</script>
+{% endblock %} 

@@ -1,0 +1,116 @@
+{% extends "base.html" %}
+
+{% block title %}Проверка кода{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>Оценка кода</h2>
+    
+    {% if blocks_data %}
+        {% for block_id, block_data in blocks_data.items() %}
+        <div class="card mb-4">
+            <div class="card-header">
+                <h3>{{ block_data.block.name }}</h3>
+                <p class="text-muted">{{ block_data.block.description }}</p>
+            </div>
+            <div class="card-body">
+                {% if block_data.evaluations %}
+                    <div class="accordion" id="block{{ block_id }}">
+                        {% for eval in block_data.evaluations %}
+                        <div class="accordion-item">
+                            <h2 class="accordion-header" id="heading{{ eval.question.id }}">
+                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" 
+                                        data-bs-target="#collapse{{ eval.question.id }}" aria-expanded="false" 
+                                        aria-controls="collapse{{ eval.question.id }}">
+                                    <div class="d-flex justify-content-between align-items-center w-100 me-3">
+                                        <span>Вопрос {{ loop.index }}</span>
+                                        <span class="badge bg-primary ms-2">
+                                            Макс. балл: {{ eval.question.points }}
+                                        </span>
+                                    </div>
+                                </button>
+                            </h2>
+                            <div id="collapse{{ eval.question.id }}" class="accordion-collapse collapse" 
+                                 aria-labelledby="heading{{ eval.question.id }}" data-bs-parent="#block{{ block_id }}">
+                                <div class="accordion-body">
+                                    <div class="mb-3">
+                                        <h5>Текст вопроса:</h5>
+                                        <p>{{ eval.question.text }}</p>
+                                    </div>
+
+                                    <div class="mb-3">
+                                        <h5>Код пользователя:</h5>
+                                        <div class="code-container">
+                                            <pre><code class="language-javascript">{{ eval.user_code }}</code></pre>
+                                        </div>
+                                    </div>
+
+                                    {% if eval.question.test_cases %}
+                                    <div class="mb-3">
+                                        <h5>Тестовые случаи:</h5>
+                                        <div class="code-container">
+                                            <pre><code class="language-javascript">{{ eval.question.test_cases }}</code></pre>
+                                        </div>
+                                    </div>
+                                    {% endif %}
+
+                                    <div class="text-end">
+                                        <a href="{{ url_for('evaluate_code', result_id=eval.result.id, question_id=eval.question.id) }}" 
+                                           class="btn btn-primary">
+                                            Оценить
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <p class="text-muted">Нет кода для оценки в этом блоке</p>
+                {% endif %}
+            </div>
+        </div>
+        {% endfor %}
+    {% else %}
+        <div class="alert alert-info">
+            <p>Нет кода для оценки</p>
+        </div>
+    {% endif %}
+</div>
+
+{% block styles %}
+<link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.24.1/themes/prism.min.css" rel="stylesheet" />
+<style>
+    .code-container {
+        max-height: 300px;
+        overflow-y: auto;
+        background: #f5f5f5;
+        border-radius: 4px;
+        padding: 10px;
+    }
+    .code-container pre {
+        margin: 0;
+        padding: 0;
+    }
+    .code-container code {
+        font-family: 'Fira Code', monospace;
+        font-size: 14px;
+        line-height: 1.5;
+    }
+    .accordion-button:not(.collapsed) {
+        background-color: #e7f1ff;
+        color: #0c63e4;
+    }
+    .accordion-button:focus {
+        box-shadow: none;
+        border-color: rgba(0,0,0,.125);
+    }
+</style>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.24.1/prism.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.24.1/components/prism-javascript.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.24.1/components/prism-python.min.js"></script>
+{% endblock %}
+{% endblock %} 

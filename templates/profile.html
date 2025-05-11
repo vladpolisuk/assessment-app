@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+
+{% block title %}Профиль{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>Профиль пользователя</h2>
+    <div class="row">
+        <div class="col-md-6">
+    <div class="card mb-4">
+        <div class="card-body">
+                    <h5 class="card-title">Информация о пользователе</h5>
+                    <p><strong>Имя пользователя:</strong> {{ user.username }}</p>
+                    <p><strong>Роль:</strong> 
+                    {% if user.role == 'admin' %}
+                        Администратор
+                    {% elif user.role == 'expert' %}
+                        Эксперт
+                    {% else %}
+                        Пользователь
+                    {% endif %}
+                </p>
+            </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+    <div class="card mb-4">
+        <div class="card-body">
+            <h5 class="card-title">Итоговая оценка</h5>
+                    <p><strong>Общий балл:</strong> {{ "%.2f"|format(final_score.final_score) }}%</p>
+                    <p><strong>Уровень компетентности:</strong> 
+                {% if final_score.level == 1 %}
+                            Максимальная компетентность
+                {% elif final_score.level == 2 %}
+                            Высокая компетентность
+                {% elif final_score.level == 3 %}
+                            Компетентность выше средней
+                {% elif final_score.level == 4 %}
+                            Средняя компетентность
+                {% else %}
+                            Низкая компетентность
+                {% endif %}
+                    </p>
+        </div>
+            </div>
+        </div>
+    </div>
+
+    <h3>Результаты по блокам</h3>
+    <div class="row">
+        {% for result in block_results %}
+        <div class="col-md-6 mb-4">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">{{ result.block.name }}</h5>
+                    {% if result.block.name == 'Воспроизводимость' %}
+                        <p><strong>Оценка:</strong> {{ "%.2f"|format(final_score.reproducibility_score) }}%</p>
+                    {% elif result.block.name == 'Конформизм' %}
+                        <p><strong>Оценка:</strong> {{ "%.2f"|format(final_score.conformity_score) }}%</p>
+                    {% else %}
+                        <p><strong>Оценка:</strong> {{ "%.2f"|format(result.score_percentage) }}%</p>
+                    {% endif %}
+                    <div class="progress">
+                        {% if result.block.name == 'Воспроизводимость' %}
+                            <div class="progress-bar" role="progressbar" style="width: {{ final_score.reproducibility_score }}%">
+                        {% elif result.block.name == 'Конформизм' %}
+                            <div class="progress-bar" role="progressbar" style="width: {{ final_score.conformity_score }}%">
+                        {% else %}
+                            <div class="progress-bar" role="progressbar" style="width: {{ result.score_percentage }}%">
+                        {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %} 

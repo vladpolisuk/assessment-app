@@ -1,0 +1,185 @@
+{% extends "base.html" %}
+
+{% block title %}Добавить вопрос{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h2>Добавить вопрос</h2>
+                </div>
+                <div class="card-body">
+                    <form id="questionForm" method="POST" action="{{ url_for('add_question') }}" enctype="multipart/form-data">
+                        <div class="mb-3">
+                            <label for="type" class="form-label">Тип вопроса</label>
+                            <select class="form-select" id="type" name="type" required>
+                                <option value="">Выберите тип вопроса</option>
+                                <option value="regular">Обычный вопрос</option>
+                                <option value="association">Ассоциация</option>
+                            </select>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="question_text" class="form-label">Текст вопроса</label>
+                            <textarea class="form-control" id="question_text" name="question_text" rows="3" required></textarea>
+                        </div>
+
+                        <!-- Regular question options -->
+                        <div id="regular-options" style="display: none;">
+                            <div class="mb-3">
+                                <label for="regular_image" class="form-label">Изображение (необязательно)</label>
+                                <input type="file" class="form-control" id="regular_image" name="regular_image" accept="image/*">
+                            </div>
+
+                            <div class="mb-3">
+                                <div class="form-check mb-2">
+                                    <input class="form-check-input" type="checkbox" id="multiple_answers" name="multiple_answers">
+                                    <label class="form-check-label" for="multiple_answers">
+                                        Разрешить несколько правильных ответов
+                                    </label>
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label">Варианты ответов</label>
+                                <div id="options-container">
+                                    <!-- Варианты ответов будут добавляться здесь -->
+                                </div>
+                                <button type="button" class="btn btn-outline-primary" onclick="addOption()">Добавить вариант</button>
+                                <small class="form-text text-muted">Отметьте правильные ответы галочками слева</small>
+                            </div>
+                        </div>
+
+                        <!-- Association options -->
+                        <div id="association-options" style="display: none;">
+                            <div class="mb-3">
+                                <label for="association_image" class="form-label">Изображение (необязательно)</label>
+                                <input type="file" class="form-control" id="association_image" name="association_image" accept="image/*">
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="association_answers" class="form-label">Правильные ассоциации</label>
+                                <textarea class="form-control" id="association_answers" name="association_answers" rows="3" 
+                                          placeholder="Введите ассоциации через запятую"></textarea>
+                                <small class="form-text text-muted">Введите правильные ассоциации через запятую</small>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="association_matches" class="form-label">Требуемое количество совпадений</label>
+                                <input type="number" class="form-control" id="association_matches" name="association_matches" min="1" value="1">
+                            </div>
+                        </div>
+
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-primary">Добавить вопрос</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.getElementById('type').addEventListener('change', function() {
+    const type = this.value;
+    const regularOptions = document.getElementById('regular-options');
+    const associationOptions = document.getElementById('association-options');
+    
+    regularOptions.style.display = 'none';
+    associationOptions.style.display = 'none';
+    
+    if (type === 'regular') {
+        regularOptions.style.display = 'block';
+        if (document.querySelectorAll('#options-container .input-group').length === 0) {
+            addOption(); // Добавляем первый вариант ответа
+        }
+    } else if (type === 'association') {
+        associationOptions.style.display = 'block';
+    }
+});
+
+let optionCounter = 0;
+
+function addOption() {
+    const container = document.getElementById('options-container');
+    const div = document.createElement('div');
+    div.className = 'input-group mb-2';
+    optionCounter++;
+    div.innerHTML = `
+        <div class="input-group-text">
+            <input type="checkbox" class="form-check-input mt-0" name="correct_answers[]" value="${optionCounter}">
+        </div>
+        <input type="text" class="form-control" name="regular_options[]" required>
+        <button type="button" class="btn btn-outline-danger" onclick="removeOption(this)">Удалить</button>
+    `;
+    container.appendChild(div);
+    updateCorrectAnswersValidation();
+}
+
+function removeOption(button) {
+    button.closest('.input-group').remove();
+    updateCorrectAnswersValidation();
+}
+
+function updateCorrectAnswersValidation() {
+    const multipleAnswers = document.getElementById('multiple_answers');
+    const checkboxes = document.querySelectorAll('input[name="correct_answers[]"]');
+    
+    checkboxes.forEach(checkbox => {
+        checkbox.addEventListener('change', function() {
+            if (!multipleAnswers.checked) {
+                checkboxes.forEach(cb => {
+                    if (cb !== this) cb.checked = false;
+                });
+            }
+        });
+    });
+}
+
+document.getElementById('questionForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const type = document.getElementById('type').value;
+    const questionText = document.getElementById('question_text').value.trim();
+    
+    if (!type || !questionText) {
+        alert('Пожалуйста, заполните тип и текст вопроса');
+        return;
+    }
+    
+    if (type === 'regular') {
+        const options = document.querySelectorAll('input[name="regular_options[]"]');
+        const correctAnswers = document.querySelectorAll('input[name="correct_answers[]"]:checked');
+        
+        if (options.length === 0) {
+            alert('Добавьте хотя бы один вариант ответа');
+            return;
+        }
+        
+        if (correctAnswers.length === 0) {
+            alert('Выберите хотя бы один правильный ответ');
+            return;
+        }
+    } else if (type === 'association') {
+        const associations = document.getElementById('association_answers').value.trim();
+        const matches = document.getElementById('association_matches').value;
+        
+        if (!associations) {
+            alert('Введите ассоциации');
+            return;
+        }
+        
+        if (!matches || matches < 1) {
+            alert('Укажите корректное количество требуемых совпадений');
+            return;
+        }
+    }
+    
+    this.submit();
+});</script>
+{% endblock %} 

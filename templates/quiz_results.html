@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+
+{% block title %}Результаты викторины{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h2 class="mb-4">Результаты викторины</h2>
+    
+    <div class="alert alert-info">
+        <h4>Ваш результат: {{ "%.1f"|format(score) }}%</h4>
+        <p>Правильных ответов: {{ correct_answers }} из {{ total_questions }}</p>
+    </div>
+
+    <div class="questions-review">
+        {% for question, answers, is_correct in questions_with_answers %}
+            <div class="card mb-4 {% if is_correct %}border-success{% else %}border-danger{% endif %}">
+                <div class="card-body">
+                    <h5 class="card-title">{{ question.text }}</h5>
+                    
+                    {% if question.image_path %}
+                        <img src="{{ url_for('static', filename='uploads/' + question.image_path) }}" 
+                             class="img-fluid mb-3" alt="Изображение к вопросу">
+                    {% endif %}
+
+                    {% if question.type == 'regular' %}
+                        <p><strong>Ваши ответы:</strong></p>
+                        <ul>
+                            {% for answer in answers %}
+                                <li>{{ answer }}</li>
+                            {% endfor %}
+                        </ul>
+                        
+                        <p><strong>Правильные ответы:</strong></p>
+                        <ul>
+                            {% for answer in question.get_correct_answers() %}
+                                <li>{{ answer }}</li>
+                            {% endfor %}
+                        </ul>
+                    {% elif question.type == 'association' %}
+                        <p><strong>Ваши ассоциации:</strong></p>
+                        <ul>
+                            {% for answer in answers %}
+                                <li>{{ answer.strip() }}</li>
+                            {% endfor %}
+                        </ul>
+                        <p>Требовалось совпадений: {{ question.required_matches }}</p>
+                        <p>Возможные правильные ассоциации:</p>
+                        <ul>
+                            {% for option in question.get_options() %}
+                                <li>{{ option }}</li>
+                            {% endfor %}
+                        </ul>
+                    {% endif %}
+
+                    <div class="mt-2">
+                        {% if is_correct %}
+                            <span class="badge bg-success">Правильно</span>
+                        {% else %}
+                            <span class="badge bg-danger">Неправильно</span>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+
+    <div class="mt-4">
+        <a href="{{ url_for('quiz') }}" class="btn btn-primary">Пройти викторину снова</a>
+        <a href="{{ url_for('index') }}" class="btn btn-secondary">На главную</a>
+    </div>
+</div>
+{% endblock %} 

@@ -1,0 +1,146 @@
+{% extends "base.html" %}
+
+{% block title %}Статистика оценок{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2 class="mb-4">Статистика оценок</h2>
+    
+    <!-- Общая статистика -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h4>Общая статистика</h4>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <canvas id="scoreDistributionChart"></canvas>
+                </div>
+                <div class="col-md-6">
+                    <canvas id="blockAveragesChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Детальная статистика по блокам -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h4>Статистика по блокам</h4>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>Блок</th>
+                            <th>Средний балл</th>
+                            <th>Максимальный балл</th>
+                            <th>Минимальный балл</th>
+                            <th>Количество оценок</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for block in blocks %}
+                        <tr>
+                            <td>{{ block.name }}</td>
+                            <td>{{ "%.2f"|format(block_stats[block.id].avg_score) }}</td>
+                            <td>{{ "%.2f"|format(block_stats[block.id].max_score) }}</td>
+                            <td>{{ "%.2f"|format(block_stats[block.id].min_score) }}</td>
+                            <td>{{ block_stats[block.id].count }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // График распределения оценок
+    const scoreDistributionCtx = document.getElementById('scoreDistributionChart').getContext('2d');
+    new Chart(scoreDistributionCtx, {
+        type: 'bar',
+        data: {
+            labels: {{ score_ranges|tojson }},
+            datasets: [{
+                label: 'Количество оценок',
+                data: {{ score_counts|tojson }},
+                backgroundColor: 'rgba(54, 162, 235, 0.5)',
+                borderColor: 'rgba(54, 162, 235, 1)',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                title: {
+                    display: true,
+                    text: 'Распределение оценок'
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    title: {
+                        display: true,
+                        text: 'Количество оценок'
+                    }
+                },
+                x: {
+                    title: {
+                        display: true,
+                        text: 'Диапазон оценок (%)'
+                    }
+                }
+            }
+        }
+    });
+    
+    // График средних оценок по блокам
+    const blockAveragesCtx = document.getElementById('blockAveragesChart').getContext('2d');
+    new Chart(blockAveragesCtx, {
+        type: 'bar',
+        data: {
+            labels: {{ block_names|tojson }},
+            datasets: [{
+                label: 'Средний балл',
+                data: {{ avg_scores|tojson }},
+                backgroundColor: 'rgba(75, 192, 192, 0.5)',
+                borderColor: 'rgba(75, 192, 192, 1)',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                title: {
+                    display: true,
+                    text: 'Средние оценки по блокам'
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    title: {
+                        display: true,
+                        text: 'Средний балл'
+                    }
+                },
+                x: {
+                    title: {
+                        display: true,
+                        text: 'Блоки оценки'
+                    }
+                }
+            }
+        }
+    });
+});
+</script>
+{% endblock %}
+{% endblock %} 

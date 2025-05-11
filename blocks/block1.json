@@ -1,0 +1,501 @@
+{
+    "name": "Компетентность в сфере фронтенд-разработки и основных языков",
+    "questions": [
+        {
+            "type": "single",
+            "text": "Какое из следующих утверждений верно описывает проблему Flash of Unstyled Content (FOUC) в веб-разработке?",
+            "options": [
+                "Это ошибка, возникающая из-за неправильной интернационализации контента.",
+                "Это явление, при котором пользователь видит незагруженные изображения на странице.",
+                "Это проблема, когда JavaScript-скрипты блокируют загрузку HTML-кода страницы.",
+                "Это задержка в применении стилей CSS, из-за чего пользователь видит неотформатированный контент перед загрузкой стилей."
+            ],
+            "correct_answer": ["Это задержка в применении стилей CSS, из-за чего пользователь видит неотформатированный контент перед загрузкой стилей."],
+            "points": 1
+        },
+        {
+            "type": "single",
+            "text": "Какое из следующих утверждений правильно описывает Event Loop в JavaScript?",
+            "options": [
+                "Это метод обхода массивов и объектов в JavaScript.",
+                "Это название цикла, используемого для создания замыканий.",
+                "Это процесс, отвечающий за асинхронное выполнение кода, управляя стеком вызовов и очередью сообщений.",
+                "Это механизм, позволяющий функциям вызываться рекурсивно с задержкой."
+            ],
+            "correct_answer": ["Это процесс, отвечающий за асинхронное выполнение кода, управляя стеком вызовов и очередью сообщений."],
+            "points": 1
+        },
+        {
+            "type": "single",
+            "text": "Какой из следующих способов наилучшим образом предотвращает callback hell в асинхронном JavaScript-коде?",
+            "options": [
+                "Использование синхронных XMLHttpRequest.",
+                "Использование вложенных функций обратного вызова.",
+                "Увеличение количества setTimeout для отложенных вызовов.",
+                "Применение промисов (Promises) и цепочек .then() или .catch()."
+            ],
+            "correct_answer": ["Применение промисов (Promises) и цепочек .then() или .catch()."],
+            "points": 1
+        },
+        {
+            "type": "single",
+            "text": "Укажите верный ответ применения следующего стиля в CSS:\np + span {\ncolor: red;\n}\n...\n<div>\n<span>span1</span>\n<p>paragraph1</p>\n<span>span2</span>\n<p>paragraph2</p>\n</div>",
+            "options": [
+                "Текст span1 и span2 будет красного цвета",
+                "Текст paragraph2 будет красного цвета",
+                "Текст span2 будет красного цвета",
+                "Ни один элемент не будет красного цвета"
+            ],
+            "correct_answer": ["Текст span2 будет красного цвета"],
+            "points": 1
+        },
+        {
+            "type": "single",
+            "text": "Стиль какого элемента определяет псевдокласс :only-child в CSS?",
+            "options": [
+                "Применяется только к дочерним элементам родителя первого уровня вложенности",
+                "Применяется к дочернему элементу, если он единственный у родителя",
+                "Применяется к родительскому элементу, имеющему хотя бы одно потомка",
+                "Применяется ко всем элементам, у которых нет соседей"
+            ],
+            "correct_answer": ["Применяется к дочернему элементу, если он единственный у родителя"],
+            "points": 1
+        },
+        {
+            "type": "single",
+            "text": "Какое из этих значений НЕ может быть значением для font-size в CSS?",
+            "options": [
+                "50%",
+                "2 m",
+                "4",
+                "xx-large"
+            ],
+            "correct_answer": ["4"],
+            "points": 1
+        },
+        {
+            "type": "single",
+            "text": "Как правильно писать комментарии в CSS файле?",
+            "options": [
+                "// Комментарий",
+                "<!--Комментарий-->",
+                "/* Комментарий */",
+                "*** Комментарий ***"
+            ],
+            "correct_answer": ["/* Комментарий */"],
+            "points": 1
+        },
+        {
+            "type": "single",
+            "text": "Какой из этих запросов позволяет переименовать столбец LastName в Surname в таблице «Employees»?",
+            "options": [
+                "ALTER TABLE Surname(LastName) FROM Employees",
+                "RENAME LastName into Surname FROM Employees",
+                "ALTER TABLE Employees CHANGE LastName Surname varchar(50)",
+                "UPDATE Employees SET LastName = Surname"
+            ],
+            "correct_answer": ["ALTER TABLE Employees CHANGE LastName Surname varchar(50)"],
+            "points": 1
+        },
+        {
+            "type": "single",
+            "text": "Какое влияние на элемент окажет добавление border-style: dashed?",
+            "options": [
+                "Граница элемента отобразится линией из точек",
+                "Граница элемента отобразится пунктирной линией",
+                "Никакого, так как такого значения не существует",
+                "Граница элемента будет невидимой"
+            ],
+            "correct_answer": ["Граница элемента отобразится пунктирной линией"],
+            "points": 1
+        },
+        {
+            "type": "single",
+            "text": "Что означает SVG?",
+            "options": [
+                "Scalable Vector Graphics",
+                "Standard Vector Graphics",
+                "Standard Visual Graphics",
+                "Scalable Visual Graphics"
+            ],
+            "correct_answer": ["Scalable Vector Graphics"],
+            "points": 1
+        },
+        {
+            "type": "single",
+            "text": "Какие атрибуты требуются для элемента SVG <rect>?",
+            "options": [
+                "атрибуты rx и ry",
+                "атрибуты width и height",
+                "атрибуты x и y",
+                "атрибуты cx и cy"
+            ],
+            "correct_answer": ["атрибуты width и height"],
+            "points": 1
+        },
+        {
+            "type": "single",
+            "text": "Какие атрибуты требуются для элемента SVG <ellipse>?",
+            "options": [
+                "атрибуты rx и ry",
+                "атрибуты cx и cy",
+                "атрибуты x и y",
+                "атрибуты width и height"
+            ],
+            "correct_answer": ["атрибуты rx и ry"],
+            "points": 1
+        },
+        {
+            "type": "single",
+            "text": "W3C расшифровывается как:",
+            "options": [
+                "Web World Wide Consortium",
+                "World Wide Web Consortium",
+                "World Wide Web Council",
+                "Web World Wide Council"
+            ],
+            "correct_answer": ["World Wide Web Consortium"],
+            "points": 1
+        },
+        {
+            "type": "single",
+            "text": "Сколько этапов включает в себя процесс утверждения стандартов W3C?",
+            "options": [
+                "5",
+                "6",
+                "7",
+                "8"
+            ],
+            "correct_answer": ["7"],
+            "points": 1
+        },
+        {
+            "type": "single",
+            "text": "Некоторые спецификации более сложны, чем другие, и могут потребовать от участников и поставщиков программного обеспечения дополнительных затрат времени и тестирования. Иногда эти спецификации публикуются в виде:",
+            "options": [
+                "Рекомендаций по кандидатам",
+                "Рекомендаций по модулям",
+                "Рекомендаций по задачам",
+                "Родительских рекомендаций"
+            ],
+            "correct_answer": ["Рекомендаций по кандидатам"],
+            "points": 1
+        },
+        {
+            "type": "single",
+            "text": "Какой SVG-фильтр используется для размытия SVG-графики?",
+            "options": [
+                "<feGaussianBlur>",
+                "<fePointLight>",
+                "<feComposite>",
+                "<feBlend>"
+            ],
+            "correct_answer": ["<feGaussianBlur>"],
+            "points": 1
+        },
+        {
+            "type": "single",
+            "text": "Какие языки программирования повлияли на спецификацию ECMAScript 6?",
+            "options": [
+                "Swift, Objective-C, Kotlin, TypeScript",
+                "Self, Perl, Python, Java",
+                "HTML, CSS, SQL, R",
+                "C++, C#, Ruby, PHP"
+            ],
+            "correct_answer": ["Self, Perl, Python, Java"],
+            "points": 1
+        },
+        {
+            "type": "single",
+            "text": "Что такое Promise()?",
+            "options": [
+                "Инструмент для управления асинхронным потоком управления. Представляет собой операцию, ожидаемую для завершения в будущем.",
+                "Противоположность Amateurmise().",
+                "Все ответы неверны.",
+                "Функция для создания новых объектов."
+            ],
+            "correct_answer": ["Инструмент для управления асинхронным потоком управления. Представляет собой операцию, ожидаемую для завершения в будущем."],
+            "points": 1
+        },
+        {
+            "type": "single",
+            "text": "Как можно уменьшить размер графического файла *.jpg с помощью Photoshop, не изменяя разрешение?",
+            "options": [
+                "Сохранить его в формате TIFF",
+                "Понизить качество файла (image options)",
+                "Использовать различные режимы смешивания (blending mode)",
+                "Отразить (flip) его справа налево, или наоборот"
+            ],
+            "correct_answer": ["Понизить качество файла (image options)"],
+            "points": 1
+        },
+        {
+            "type": "single",
+            "text": "Как можно вдвое уменьшить разрешение файла в Photoshop?",
+            "options": [
+                "Image/Image Size/ В окне устанавливаем Width и Height по 200%. Constrain Proportions включено.",
+                "Image/Image Size/ В окне устанавливаем Width и Height по 50%. Constrain Proportions включено.",
+                "Image/Image Size/ В окне устанавливаем Width на 50%, а Height на 200%. Constrain Proportions выключено.",
+                "Image/Image Size/ В окне устанавливаем Width на 2000%, а Height на 50%. Constrain Proportions выключено."
+            ],
+            "correct_answer": ["Image/Image Size/ В окне устанавливаем Width и Height по 50%. Constrain Proportions включено."],
+            "points": 1
+        },
+        {
+            "type": "single",
+            "text": "Выберите верное утверждение:",
+            "options": [
+                "SQL чувствителен к регистру при написании запросов",
+                "SQL чувствителен к регистру в названиях таблиц при написании запросов",
+                "SQL нечувствителен к регистру",
+                "SQL чувствителен к регистру только в названиях столбцов"
+            ],
+            "correct_answer": ["SQL нечувствителен к регистру"],
+            "points": 1
+        },
+        {
+            "type": "single",
+            "text": "Запрос, позволяющий переименовать столбец LastName в Surname в таблице «Employees»",
+            "options": [
+                "RENAME LastName into Surname FROM Employees",
+                "ALTER TABLE Employees CHANGE LastName Surname varchar(50)",
+                "ALTER TABLE Surname(LastName) FROM Employees",
+                "UPDATE Employees SET LastName = Surname"
+            ],
+            "correct_answer": ["ALTER TABLE Employees CHANGE LastName Surname varchar(50)"],
+            "points": 1
+        },
+        {
+            "type": "single",
+            "text": "Как в DOM выбрать один элемент по селектору, например h3?",
+            "options": [
+                "const head3 = document.querySelector('h3');",
+                "const head3 = querySelector('h3');",
+                "const head3 = document.querySelector(h3);",
+                "const head3 = document.getElementByTag('h3');"
+            ],
+            "correct_answer": ["const head3 = document.querySelector('h3');"],
+            "points": 1
+        },
+        {
+            "type": "single",
+            "text": "Что необходимо написать, чтобы добавить класс для коллекции элементов при обходе через цикл в данном примере (DOM)?\nconst paragraphs = document.querySelectorAll('p');\nfor (let p of paragraphs) {\n    // Ваш код\n}",
+            "options": [
+                "p.add('black');",
+                "p.classList('black');",
+                "p.classList.add('black');",
+                "p.addClass('black');"
+            ],
+            "correct_answer": ["p.classList.add('black');"],
+            "points": 1
+        },
+        {
+            "type": "single",
+            "text": "Что будет записано в переменную check если у h2 уже установлен класс red-text ?\nconst head2 = document.querySelector('h2');\nlet check = head2.classList.toggle('red-text');",
+            "options": [
+                "Undefined",
+                "True",
+                "False",
+                "null"
+            ],
+            "correct_answer": ["False"],
+            "points": 1
+        },
+        {
+            "type": "single",
+            "text": "Выберите язык программирования, который НЕ повлиял на спецификацию ECMAScript 6:",
+            "options": [
+                "Self",
+                "Perl",
+                "TypeScript",
+                "Python",
+                "Java"
+            ],
+            "correct_answer": ["TypeScript"],
+            "points": 1
+        },
+        {
+            "type": "single",
+            "text": "Назовите SVG-фильтр, используемый для размытия SVG-графики:",
+            "options": [
+                "<feComposite>",
+                "<feGaussianBlur>",
+                "<feBlend>",
+                "<fePointLight>"
+            ],
+            "correct_answer": ["<feGaussianBlur>"],
+            "points": 1
+        },
+        {
+            "type": "single",
+            "text": "SQL чувствителен к регистру при написании запросов:",
+            "options": [
+                "Верно",
+                "Неверно",
+                "Чувствителен только в названиях таблиц",
+                "Чувствителен только в названиях столбцов"
+            ],
+            "correct_answer": ["Неверно"],
+            "points": 1
+        },
+        {
+            "type": "multiple",
+            "text": "Что является правильным при использовании SVG filter?",
+            "options": [
+                "Элемент <filter> используется для определения фильтров SVG",
+                "Элемент <filter> имеет обязательный атрибут id",
+                "Элемент <filter> определен в элементе <defs>",
+                "Элемент <filter> может содержать только один фильтр"
+            ],
+            "correct_answer": [
+                "Элемент <filter> используется для определения фильтров SVG",
+                "Элемент <filter> имеет обязательный атрибут id",
+                "Элемент <filter> определен в элементе <defs>"
+            ],
+            "points": 1
+        },
+        {
+            "type": "multiple",
+            "text": "Какие типы функций есть в JavaScript?",
+            "options": [
+                "Задаваемые",
+                "Встроенные",
+                "Постоянные",
+                "Частичные",
+                "Создаваемые",
+                "Индифферентные"
+            ],
+            "correct_answer": ["Встроенные", "Создаваемые"],
+            "points": 1
+        },
+        {
+            "type": "single",
+            "text": "Вам поставлена задача разработать фронтенд для интернет-магазина. Переход от корзины к оформлению заказа должен происходить без обновления всей страницы. Какой подход будете использовать?",
+            "options": [
+                "React.js",
+                "HTML-код, работающий с DOM API"
+            ],
+            "correct_answer": ["React.js"],
+            "points": 1
+        },
+        {
+            "type": "single",
+            "text": "Клиент предлагает использовать CSS, чтобы при прокрутке страницы её шапка двигалась вместе с прокруткой и всегда оставалась в верхней части экрана. Ваши коллеги против этой идеи и аргументируют это тем, что данную функцию получится реализовать только через JavaScript. Что ответите клиенту вы?",
+            "options": [
+                "Код действительно нереализуем через CSS, это возможно только с использованием JavaScript",
+                "Эта функция осуществима через CSS, потратив меньше строк кода, чем в JavaScript"
+            ],
+            "correct_answer": ["Эта функция осуществима через CSS, потратив меньше строк кода, чем в JavaScript"],
+            "points": 1
+        },
+        {
+            "type": "single",
+            "text": "Клиент просит разработать веб-приложение, предлагая использовать язык Type Script. Ваши коллеги не соглашаются, говоря, что это выйдет дороже, чем на других языках. Что ответите клиенту вы?",
+            "options": [
+                "Согласитесь на разработку на TypeScript, с помощью него разработка выйдет дешевле",
+                "Не согласитесь, аргументируя это дороговизной разработки на Type Script"
+            ],
+            "correct_answer": ["Не согласитесь, аргументируя это дороговизной разработки на Type Script"],
+            "points": 1
+        },
+        {
+            "type": "single",
+            "text": "Экспертов в фронтенд-разработке попросили описать закон Фиттса о расположении кнопок. 89% предыдущих экспертов описали его так: Чем крупнее и ближе друг к другу расположены кнопки или поля для действий, тем удобнее будет пользователю. Согласны ли вы с их ответом?",
+            "options": [
+                "Да",
+                "Нет, закон Фиттса и близко не похож на описанный предыдущими экспертами"
+            ],
+            "correct_answer": ["Да"],
+            "points": 1
+        },
+        {
+            "type": "open",
+            "text": "Внутрь какого HTML-элемента помещается код JavaScript?",
+            "correct_answer": ["js", "<js>", "<js></js>"],
+            "points": 2
+        },
+        {
+            "type": "open",
+            "text": "Назовите секции HTML-кода, в которые можно помещать код JavaScript?",
+            "correct_answer": ["body, head", "head, body", "body и head", "head и body", "body head", "head body"],
+            "points": 2
+        },
+        {
+            "type": "open",
+            "text": "Как вызвать функцию myFunction()?",
+            "correct_answer": ["myFunction()", "myFunction();"],
+            "points": 2
+        },
+        {
+            "type": "open",
+            "text": "Используя встроенную функцию JavaScript, найдите максимальное значение двух переменных x и y. В поле ответа впишите только функцию, другие строки кода вписывать не нужно.",
+            "correct_answer": ["Math.max(x,y)", "Math.max(y,x)", "Math.max(x, y)", "Math.max(y, x)"],
+            "points": 2
+        },
+        {
+            "type": "open",
+            "text": "Что вернёт следующий фрагмент кода:\nfunction Book() {\n    this.name = 'foo'\n}\n\nBook.prototype = {\n    getName: function() {\n        return this.name;\n    }\n};\n\nvar book = new Book();\n\nBook.prototype.getUpperName = function() {\n    return this.getName().toUpperCase();\n}\n\nbook.getUpperName();",
+            "correct_answer": ["FOO", "'FOO'"],
+            "points": 2
+        },
+        {
+            "type": "open",
+            "text": "Назовите модуль CSS, который позволяет удобно управлять расположением, порядком, размерами и отступами между элементами веб-страницы.",
+            "correct_answer": ["Flexbox", "Flex box"],
+            "points": 2
+        },
+        {
+            "type": "open",
+            "text": "В какие фрагменты HTML-кода можно помещать код JS?",
+            "correct_answer": ["body, head", "head, body", "body и head", "head и body", "body head", "head body"],
+            "points": 1
+        },
+        {
+            "type": "open",
+            "text": "Как выбрать максимальное значение переменных x и y в JavaScript, пользуясь только встроенной функцией?",
+            "correct_answer": ["Math.max(x,y)", "Math.max(y,x)", "Math.max(x, y)", "Math.max(y, x)"],
+            "points": 1
+        },
+        {
+            "type": "code",
+            "text": "Числа от 1 до 100 лежат в массиве, они хаотично перемешаны. Из массива пользователь выбрал одно число, оно изъято из массива. Надо найти, что это за число.",
+            "code_template": "function findMissingNumber(arr) {\n    // Ваш код здесь\n}",
+            "test_cases": [
+                {"input": "[1,2,3,4,6,7,8,9,10]", "expected": "5"},
+                {"input": "[1,2,3,4,5,6,7,8,10]", "expected": "9"}
+            ],
+            "points": 5
+        },
+        {
+            "type": "code",
+            "text": "Написано 2 функции, первая должна возвращать сумму чисел, вторая – их произведение. Вторая функция работает правильно, первая выводит «12» вместо «3». Пояснить, в чём ошибка, и вписать в поле исправленный код первой функции:\n  function summa(a, b) {\n    return a + b\n  };\n  console.log(summa(1, '2'));\n              \n  function multy(a, b) {\n    return a * b;\n  };\n  console.log(multy(1, '2'))",
+            "code_template": "function summa(a, b) {\n    // Ваш код здесь\n}",
+            "test_cases": [
+                {"input": "1, 2", "expected": "3"},
+                {"input": "2, 3", "expected": "5"}
+            ],
+            "points": 5
+        },
+        {
+            "type": "code",
+            "text": "Дано число. Выведите на экран процесс разложения числа на простые множители, как в школе, используя PHP.",
+            "code_template": "function factorize($n) {\n    // Ваш код здесь\n}",
+            "test_cases": [
+                {"input": "12", "expected": "2 * 2 * 3"},
+                {"input": "15", "expected": "3 * 5"}
+            ],
+            "points": 5
+        },
+        {
+            "type": "code",
+            "text": "В следующих задачах некоторый программист написал код и, возможно, допустил в нем ошибки. Вы должны проверить, делает ли код то, что описано. Если код работает некорректно, вы должны исправить ошибки:\n1. Код должен был вывести в консоль число 1, но выводит 0:\nlet a = 0;\nconsole.log(a++);\n2. Код должен вывести первую цифру числа:\nlet num = 123;\nconsole.log(num[0]);\n3. Код должен вывести количество цифр в числе:\nlet num = 123;\nlet str = String(num);\nconsole.log(str.lenght);",
+            "code_template": "// Исправленный код для задачи 1\nlet a = 0;\nconsole.log(++a);\n\n// Исправленный код для задачи 2\nlet num = 123;\nconsole.log(String(num)[0]);\n\n// Исправленный код для задачи 3\nlet num = 123;\nlet str = String(num);\nconsole.log(str.length);",
+            "test_cases": [
+                {"input": "task1", "expected": "1"},
+                {"input": "task2", "expected": "1"},
+                {"input": "task3", "expected": "3"}
+            ],
+            "points": 5
+        }
+    ]
+} 

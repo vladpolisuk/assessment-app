@@ -1,0 +1,232 @@
+{% extends "base.html" %}
+
+{% block title %}Результаты оценки{% endblock %}
+
+{% block styles %}
+<style>
+    .assessment-card {
+        margin-bottom: 20px;
+    }
+    .score-chart {
+        max-height: 300px;
+    }
+    .criteria-table th {
+        background-color: #f8f9fa;
+    }
+    .criteria-score {
+        text-align: center;
+        font-weight: 500;
+    }
+    .expert-comment {
+        background-color: #f8f9fa;
+        padding: 10px;
+        border-radius: 5px;
+        margin-top: 10px;
+    }
+    .peer-score-card {
+        margin-top: 20px;
+    }
+    .accordion-button:not(.collapsed) {
+        background-color: #e7f1ff;
+        color: #0c63e4;
+    }
+    .accordion-button:focus {
+        box-shadow: none;
+        border-color: rgba(0,0,0,.125);
+    }
+    .progress {
+        height: 25px;
+    }
+    .progress-bar {
+        line-height: 25px;
+        font-weight: bold;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2 class="mb-4">Результаты оценки</h2>
+
+    {% if final_score %}
+    <div class="card mb-4">
+        <div class="card-header bg-primary text-white">
+            <h4 class="mb-0">Итоговая оценка</h4>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <h5>Общий балл: {{ "%.2f"|format(final_score.final_score) }}%</h5>
+                    <p>Уровень компетентности: {{ final_score.level }}</p>
+                </div>
+                <div class="col-md-6">
+                    <h5>Взаимооценка: {{ "%.2f"|format(peer_score * 100) }}%</h5>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    {% for block in assessment_data %}
+    <div class="card mb-4">
+        <div class="card-header bg-light">
+            <div class="d-flex justify-content-between align-items-center">
+                <h4 class="mb-0">{{ block.name }}</h4>
+                <div>
+                    <span class="badge bg-primary">Балл: {{ "%.2f"|format(block.total_score) }}/{{ "%.2f"|format(block.max_possible_score) }}</span>
+                    <span class="badge bg-info">Процент: {{ "%.2f"|format(block.score_percentage) }}%</span>
+                </div>
+            </div>
+            {% if block.description %}
+            <p class="text-muted mt-2">{{ block.description }}</p>
+            {% endif %}
+        </div>
+        <div class="card-body">
+            <div class="accordion" id="block{{ block.id }}">
+                {% for question in block.questions %}
+                <div class="accordion-item">
+                    <h2 class="accordion-header" id="heading{{ question.id }}">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" 
+                                data-bs-target="#collapse{{ question.id }}" aria-expanded="false" 
+                                aria-controls="collapse{{ question.id }}">
+                            <div class="d-flex justify-content-between align-items-center w-100 me-3">
+                                <span>Вопрос {{ loop.index }}</span>
+                                <span class="badge bg-primary ms-2">
+                                    {{ "%.2f"|format(question.score) }}/{{ "%.2f"|format(question.max_score) }}
+                                </span>
+                            </div>
+                        </button>
+                    </h2>
+                    <div id="collapse{{ question.id }}" class="accordion-collapse collapse" 
+                         aria-labelledby="heading{{ question.id }}" data-bs-parent="#block{{ block.id }}">
+                        <div class="accordion-body">
+                            <div class="mb-3">
+                                <h5>Текст вопроса:</h5>
+                                <p>{{ question.text }}</p>
+                            </div>
+
+                            {% if question.type in ['single', 'multiple'] and question.options %}
+                            <div class="mb-3">
+                                <h5>Варианты ответов:</h5>
+                                <ul class="list-group">
+                                    {% for option in question.options %}
+                                    <li class="list-group-item {% if question.correct_answer and option in question.correct_answer %}list-group-item-success{% endif %}">
+                                        {{ option }}
+                                        {% if question.correct_answer and option in question.correct_answer %}
+                                        <span class="badge bg-success float-end">Правильный ответ</span>
+                                        {% endif %}
+                                    </li>
+                                    {% endfor %}
+                                </ul>
+                            </div>
+                            {% endif %}
+
+                            <div class="mb-3">
+                                <h5>Ваш ответ:</h5>
+                                {% if question.type == 'code' %}
+                                <pre class="bg-light p-3 rounded"><code>{{ question.answer }}</code></pre>
+                                {% elif question.type == 'expert_evaluation' %}
+                                <p>Оценка экспертов: {{ "%.2f"|format(question.score) }}/{{ "%.2f"|format(question.max_score) }}</p>
+                                {% else %}
+                                <p>{{ question.answer }}</p>
+                                {% endif %}
+                            </div>
+
+                            <div class="mb-3">
+                                <h5>Результат:</h5>
+                                <div class="progress">
+                                    <div class="progress-bar {% if question.score == question.max_score %}bg-success{% elif question.score >= question.max_score * 0.6 %}bg-warning{% else %}bg-danger{% endif %}" 
+                                         role="progressbar" 
+                                         style="width: {{ (question.score / question.max_score * 100)|round }}%"
+                                         aria-valuenow="{{ question.score }}" 
+                                         aria-valuemin="0" 
+                                         aria-valuemax="{{ question.max_score }}">
+                                        {{ "%.2f"|format(question.score) }}/{{ "%.2f"|format(question.max_score) }}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+{% if peer_data %}
+<div class="card mt-4">
+    <div class="card-header">
+        <h5 class="mb-0">Результаты взаимооценки</h5>
+    </div>
+    <div class="card-body">
+        {% for evaluation in peer_data %}
+        <div class="card mb-3">
+            <div class="card-header">
+                <h6 class="mb-0">Эксперт: {{ evaluation.expert }}</h6>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-bordered criteria-table">
+                        <thead>
+                            <tr>
+                                <th>Критерий</th>
+                                <th>Оценка</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for criterion, score in evaluation.criteria_scores.items() %}
+                            <tr>
+                                <td>{{ criterion }}</td>
+                                <td class="criteria-score">{{ score }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                
+                <div class="mt-3">
+                    <p><strong>Средний балл:</strong> {{ "%.2f"|format(evaluation.avg_score) }}</p>
+                    {% if evaluation.comment %}
+                    <div class="expert-comment">
+                        <strong>Комментарий:</strong>
+                        <p>{{ evaluation.comment }}</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+
+{% if peer_score is defined %}
+<div class="card peer-score-card">
+    <div class="card-header">
+        <h5 class="mb-0">Результат взаимооценки</h5>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-6">
+                <h6>Средний балл от других пользователей:</h6>
+                <div class="progress" style="height: 30px;">
+                    <div class="progress-bar bg-success" role="progressbar" 
+                         style="width: {{ peer_score * 100 }}%;" 
+                         aria-valuenow="{{ peer_score * 100 }}" 
+                         aria-valuemin="0" 
+                         aria-valuemax="100">
+                        {{ "%.2f"|format(peer_score * 100) }}%
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+{% endblock %} 

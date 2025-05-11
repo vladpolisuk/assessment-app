@@ -1,0 +1,98 @@
+{% extends "base.html" %}
+
+{% block title %}Главная{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card mb-4">
+                <div class="card-body">
+                    <h2 class="card-title">Добро пожаловать в систему оценки компетенций</h2>
+                    <p class="card-text">Наша система поможет вам оценить и развить ваши профессиональные навыки в области веб-разработки.</p>
+                    
+                    {% if session.get('user_id') %}
+                        <div class="alert alert-info">
+                            <h5 class="alert-heading">Ваш статус: 
+                                {% if session.get('role') == 'admin' %}
+                                    Администратор
+                                {% elif session.get('role') == 'expert' %}
+                                    Эксперт
+                                {% else %}
+                                    Пользователь
+                                {% endif %}
+                            </h5>
+                            <p class="mb-0">Вы можете начать оценку своих компетенций или просмотреть результаты предыдущих оценок.</p>
+                        </div>
+                        
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-start">
+                            <a href="{{ url_for('assessment_system') }}" class="btn btn-primary">
+                                <i class="bi bi-clipboard-data"></i> Начать оценку
+                            </a>
+                            <a href="{{ url_for('assessment_results') }}" class="btn btn-outline-primary">
+                                <i class="bi bi-graph-up"></i> Мои результаты
+                            </a>
+                        </div>
+                    {% else %}
+                        <div class="alert alert-warning">
+                            <h5 class="alert-heading">Внимание!</h5>
+                            <p class="mb-0">Для доступа к системе оценки необходимо войти в систему или зарегистрироваться.</p>
+                        </div>
+                        
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-start">
+                            <a href="{{ url_for('login') }}" class="btn btn-primary">
+                                <i class="bi bi-box-arrow-in-right"></i> Войти
+                            </a>
+                            <a href="{{ url_for('register') }}" class="btn btn-outline-primary">
+                                <i class="bi bi-person-plus"></i> Регистрация
+                            </a>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <div class="card mb-4">
+                <div class="card-body">
+                    <h5 class="card-title">О системе</h5>
+                    <ul class="list-unstyled">
+                        <li class="mb-2">
+                            <i class="bi bi-check-circle text-success"></i>
+                            Оценка технических навыков
+                        </li>
+                        <li class="mb-2">
+                            <i class="bi bi-check-circle text-success"></i>
+                            Экспертная проверка кода
+                        </li>
+                        <li class="mb-2">
+                            <i class="bi bi-check-circle text-success"></i>
+                            Взаимооценка коллег
+                        </li>
+                        <li class="mb-2">
+                            <i class="bi bi-check-circle text-success"></i>
+                            Детальная статистика
+                        </li>
+                    </ul>
+                </div>
+            </div>
+            
+            {% if session.get('role') in ['expert', 'admin'] %}
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Экспертные функции</h5>
+                    <div class="d-grid gap-2">
+                        <a href="{{ url_for('expert_code_evaluations') }}" class="btn btn-outline-primary">
+                            <i class="bi bi-code-square"></i> Проверка кода
+                        </a>
+                        <a href="{{ url_for('assessment_stats') }}" class="btn btn-outline-primary">
+                            <i class="bi bi-bar-chart"></i> Статистика
+                        </a>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %} 

@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>{% if block %}Редактировать блок{% else %}Добавить блок{% endif %}</h2>
+    
+    <form method="post">
+        <div class="form-group">
+            <label for="name">Название блока</label>
+            <input type="text" class="form-control" id="name" name="name" value="{{ block.name if block else '' }}" required>
+        </div>
+        
+        <div class="form-group">
+            <label for="weight">Вес блока</label>
+            <input type="number" class="form-control" id="weight" name="weight" step="0.001" value="{{ block.weight if block else '' }}" required>
+        </div>
+        
+        <div class="form-group">
+            <label for="max_score">Максимальный балл</label>
+            <input type="number" class="form-control" id="max_score" name="max_score" step="0.001" value="{{ block.max_score if block else '' }}" required>
+        </div>
+        
+        <button type="submit" class="btn btn-primary">{% if block %}Обновить{% else %}Добавить{% endif %}</button>
+        <a href="{{ url_for('assessment_blocks') }}" class="btn btn-secondary">Отмена</a>
+    </form>
+</div>
+{% endblock %} 

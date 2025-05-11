@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>Взаимооценка экспертов</h2>
+    <form method="POST">
+        <div class="list-group mb-3">
+            {% for expert in experts %}
+            <div class="list-group-item d-flex align-items-center justify-content-between">
+                <div>
+                    <strong>{{ expert.username }}</strong>
+                </div>
+                <div>
+                    <select name="score_{{ expert.id }}" class="form-select" style="width: 80px; display: inline-block;">
+                        {% for i in range(0, 11) %}
+                        <option value="{{ i }}">{{ i }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        <button type="submit" class="btn btn-primary">Сохранить оценки</button>
+    </form>
+</div>
+{% endblock %} 

@@ -1,0 +1,144 @@
+{% extends "base.html" %}
+
+{% block title %}{{ block.name }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>{{ block.name }}</h2>
+    <p class="text-muted">{{ block.description }}</p>
+    
+    <form method="POST" action="{{ url_for('submit_assessment_block', block_id=block.id) }}">
+        {% for question in questions %}
+            <div class="card mb-4">
+                <div class="card-body">
+                    <h5 class="card-title">Вопрос {{ loop.index }}</h5>
+                    <p class="card-text">{{ question.text }}</p>
+                    {% if question.description %}
+                        <p class="text-muted">{{ question.description }}</p>
+                    {% endif %}
+                    <p class="text-muted">Баллы: {{ question.points }}</p>
+
+                    {% if question.type == 'single' %}
+                        {% set options = question.options|from_json %}
+                        {% for option in options %}
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio"
+                                       name="answer_{{ question.id }}" value="{{ loop.index0 }}"
+                                       id="q{{ question.id }}_o{{ loop.index }}">
+                                <label class="form-check-label" for="q{{ question.id }}_o{{ loop.index }}">
+                                    {{ option.text if option.text is defined else option }}
+                                </label>
+                            </div>
+                        {% endfor %}
+                    {% elif question.type == 'expert_evaluation' %}
+                        {% set criteria = question.get_criteria() %}
+                        {% for criterion in criteria %}
+                            <div class="form-group">
+                                <label for="criterion_{{ question.id }}_{{ loop.index }}">{{ criterion }}</label>
+                                <input type="number" class="form-control" 
+                                       id="criterion_{{ question.id }}_{{ loop.index }}"
+                                       name="criterion_{{ question.id }}_{{ loop.index }}"
+                                       min="0" max="{{ question.max_score }}" step="0.1"
+                                       required>
+                            </div>
+                        {% endfor %}
+                    {% elif question.type == 'self_assessment' %}
+                        {% set options = question.options|from_json %}
+                        {% for option in options %}
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio"
+                                       name="answer_{{ question.id }}" value="{{ loop.index0 }}"
+                                       id="q{{ question.id }}_o{{ loop.index }}">
+                                <label class="form-check-label" for="q{{ question.id }}_o{{ loop.index }}">
+                                    {{ option.text if option.text is defined else option }}
+                                </label>
+                            </div>
+                        {% endfor %}
+                    {% elif question.type == 'single' and ('Креативность' in block.name or block.id == 3) %}
+                        {% set options = question.options|from_json %}
+                        {% for option in options %}
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio"
+                                       name="answer_{{ question.id }}" value="{{ loop.index0 }}"
+                                       id="q{{ question.id }}_o{{ loop.index }}">
+                                <label class="form-check-label" for="q{{ question.id }}_o{{ loop.index }}">
+                                    {{ option }}
+                                </label>
+                            </div>
+                        {% endfor %}
+                    {% elif question.type == 'single' %}
+                        {% set options = question.options|from_json %}
+                        {% for option in options %}
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio"
+                                       name="answer_{{ question.id }}" value="{{ loop.index0 }}"
+                                       id="q{{ question.id }}_o{{ loop.index }}">
+                                <label class="form-check-label" for="q{{ question.id }}_o{{ loop.index }}">
+                                    {{ option }}
+                                </label>
+                            </div>
+                        {% endfor %}
+                    {% elif question.type == 'multiple' %}
+                        {% set options = question.options|from_json %}
+                        {% for option in options %}
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox"
+                                       name="answer_{{ question.id }}" value="{{ loop.index0 }}"
+                                   id="q{{ question.id }}_o{{ loop.index }}">
+                                <label class="form-check-label" for="q{{ question.id }}_o{{ loop.index }}">
+                                    {{ option }}
+                                </label>
+                            </div>
+                        {% endfor %}
+                    {% elif question.type == 'matching' %}
+                        {% set definitions = question.get_definitions() %}
+                        {% set terms = question.get_terms() %}
+                        {% for definition in definitions %}
+                            <div class="form-group">
+                                <label for="match_{{ question.id }}_{{ loop.index0 }}">{{ definition }}</label>
+                                <select class="form-control" name="answer_{{ question.id }}[]" id="match_{{ question.id }}_{{ loop.index0 }}" required>
+                                    <option value="" disabled selected>Выберите термин</option>
+                                    {% for term in terms %}
+                                        <option value="{{ loop.index0 }}">{{ term }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        {% endfor %}
+                    {% elif question.type == 'code' %}
+                        <div class="form-group">
+                            <label for="code_{{ question.id }}">Ваш код:</label>
+                            <textarea class="form-control" id="code_{{ question.id }}" name="answer_{{ question.id }}" 
+                                    rows="10" style="font-family: monospace;">{{ question.code_template }}</textarea>
+                        </div>
+                        {% if question.test_cases %}
+                            <div class="mt-3">
+                                <h6>Тестовые случаи:</h6>
+                                    <pre class="bg-light p-3"><code>{{ question.test_cases|tojson|from_json|tojson(indent=2) }}</code></pre>
+                            </div>
+                        {% endif %}
+                    {% else %}
+                        <div class="form-group">
+                            <textarea class="form-control" name="answer_{{ question.id }}" rows="3"></textarea>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        {% endfor %}
+        
+        <button type="submit" class="btn btn-primary">Отправить</button>
+    </form>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Подсветка синтаксиса для кодовых вопросов
+    document.querySelectorAll('textarea[id^="code_"]').forEach(function(textarea) {
+        textarea.addEventListener('input', function() {
+            // Можно добавить подсветку синтаксиса здесь
+        });
+    });
+});
+</script>
+{% endblock %} 

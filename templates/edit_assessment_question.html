@@ -1,0 +1,144 @@
+{% extends "base.html" %}
+
+{% block title %}Редактирование вопроса{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h2>Редактирование вопроса</h2>
+    <form method="POST">
+        <div class="mb-3">
+            <label for="type" class="form-label">Тип вопроса</label>
+            <select class="form-select" id="type" name="type" required>
+                <option value="single" {% if question.type == 'single' %}selected{% endif %}>Один правильный ответ</option>
+                <option value="multiple" {% if question.type == 'multiple' %}selected{% endif %}>Несколько правильных ответов</option>
+                <option value="open" {% if question.type == 'open' %}selected{% endif %}>Открытый вопрос</option>
+                <option value="code" {% if question.type == 'code' %}selected{% endif %}>Вопрос с кодом</option>
+                <option value="matching" {% if question.type == 'matching' %}selected{% endif %}>Сопоставление</option>
+            </select>
+        </div>
+
+        <div class="mb-3">
+            <label for="text" class="form-label">Текст вопроса</label>
+            <textarea class="form-control" id="text" name="text" rows="3" required>{{ question.text }}</textarea>
+        </div>
+
+        <div class="mb-3">
+            <label for="points" class="form-label">Баллы</label>
+            <input type="number" class="form-control" id="points" name="points" step="0.1" min="0" value="{{ question.points }}" required>
+        </div>
+
+        <div id="options-container" class="mb-3" {% if question.type not in ['single', 'multiple'] %}style="display: none;"{% endif %}>
+            <label class="form-label">Варианты ответов</label>
+            <div id="options-list">
+                {% if question.options %}
+                    {% set options = question.options|from_json %}
+                    {% for option in options %}
+                        <div class="input-group mb-2">
+                            <input type="text" class="form-control" name="options[]" value="{{ option }}" required>
+                            <button type="button" class="btn btn-outline-danger remove-option">Удалить</button>
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            </div>
+            <button type="button" class="btn btn-outline-primary" id="add-option">Добавить вариант</button>
+        </div>
+
+        <div id="correct-answers-container" class="mb-3" {% if question.type not in ['single', 'multiple'] %}style="display: none;"{% endif %}>
+            <label class="form-label">Правильные ответы</label>
+            {% if question.correct_answer %}
+                {% set correct_answers = question.correct_answer|from_json %}
+                {% for answer in correct_answers %}
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" name="correct_answers[]" value="{{ answer }}" checked>
+                        <label class="form-check-label">{{ answer }}</label>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        </div>
+
+        <div id="code-container" class="mb-3" {% if question.type != 'code' %}style="display: none;"{% endif %}>
+            <div class="mb-3">
+                <label for="code_template" class="form-label">Шаблон кода</label>
+                <textarea class="form-control" id="code_template" name="code_template" rows="5">{{ question.code_template }}</textarea>
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Тестовые случаи</label>
+                <div id="test-cases-list">
+                    {% if question.test_cases %}
+                        {% set test_cases = question.test_cases|from_json %}
+                        {% for test_case in test_cases %}
+                            <div class="input-group mb-2">
+                                <input type="text" class="form-control" name="test_cases[]" value="{{ test_case }}" required>
+                                <button type="button" class="btn btn-outline-danger remove-test-case">Удалить</button>
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+                </div>
+                <button type="button" class="btn btn-outline-primary" id="add-test-case">Добавить тестовый случай</button>
+            </div>
+        </div>
+
+        <div id="open-answer-container" class="mb-3" {% if question.type != 'open' %}style="display: none;"{% endif %}>
+            <label for="correct_answer" class="form-label">Правильный ответ</label>
+            <input type="text" class="form-control" id="correct_answer" name="correct_answer" value="{{ question.correct_answer|from_json if question.correct_answer else '' }}">
+        </div>
+
+        <button type="submit" class="btn btn-primary">Сохранить изменения</button>
+        <a href="{{ url_for('assessment_questions', block_id=block.id) }}" class="btn btn-secondary">Отмена</a>
+    </form>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const typeSelect = document.getElementById('type');
+    const optionsContainer = document.getElementById('options-container');
+    const correctAnswersContainer = document.getElementById('correct-answers-container');
+    const codeContainer = document.getElementById('code-container');
+    const openAnswerContainer = document.getElementById('open-answer-container');
+    const optionsList = document.getElementById('options-list');
+    const testCasesList = document.getElementById('test-cases-list');
+
+    typeSelect.addEventListener('change', function() {
+        const type = this.value;
+        optionsContainer.style.display = type === 'single' || type === 'multiple' ? 'block' : 'none';
+        correctAnswersContainer.style.display = type === 'single' || type === 'multiple' ? 'block' : 'none';
+        codeContainer.style.display = type === 'code' ? 'block' : 'none';
+        openAnswerContainer.style.display = type === 'open' ? 'block' : 'none';
+    });
+
+    document.getElementById('add-option').addEventListener('click', function() {
+        const optionDiv = document.createElement('div');
+        optionDiv.className = 'input-group mb-2';
+        optionDiv.innerHTML = `
+            <input type="text" class="form-control" name="options[]" required>
+            <button type="button" class="btn btn-outline-danger remove-option">Удалить</button>
+        `;
+        optionsList.appendChild(optionDiv);
+    });
+
+    document.getElementById('add-test-case').addEventListener('click', function() {
+        const testCaseDiv = document.createElement('div');
+        testCaseDiv.className = 'input-group mb-2';
+        testCaseDiv.innerHTML = `
+            <input type="text" class="form-control" name="test_cases[]" required>
+            <button type="button" class="btn btn-outline-danger remove-test-case">Удалить</button>
+        `;
+        testCasesList.appendChild(testCaseDiv);
+    });
+
+    optionsList.addEventListener('click', function(e) {
+        if (e.target.classList.contains('remove-option')) {
+            e.target.parentElement.remove();
+        }
+    });
+
+    testCasesList.addEventListener('click', function(e) {
+        if (e.target.classList.contains('remove-test-case')) {
+            e.target.parentElement.remove();
+        }
+    });
+});
+</script>
+{% endblock %} 

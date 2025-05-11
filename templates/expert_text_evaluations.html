@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>Оценка текстовых ответов</h2>
+    
+    {% for block_id, block_data in blocks_data.items() %}
+    <div class="card mb-4">
+        <div class="card-header">
+            <h3>{{ block_data.block.name }}</h3>
+            <p class="text-muted">{{ block_data.block.description }}</p>
+        </div>
+        <div class="card-body">
+            {% if block_data.evaluations %}
+                <div class="table-responsive">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Вопрос</th>
+                                <th>Ответ</th>
+                                <th>Статус</th>
+                                <th>Действия</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for eval in block_data.evaluations %}
+                            <tr>
+                                <td>{{ eval.question.text }}</td>
+                                <td>
+                                    {% if eval.question.type == 'open' %}
+                                        {{ eval.user_answer }}
+                                    {% elif eval.question.type in ['single', 'multiple'] %}
+                                        {% set options = eval.question.options|from_json %}
+                                        {% if eval.question.type == 'single' %}
+                                            {{ options[eval.user_answer] if eval.user_answer in options else eval.user_answer }}
+                                        {% else %}
+                                            {% set user_answers = eval.user_answer|from_json %}
+                                            {% for answer in user_answers %}
+                                                {{ options[answer] if answer in options else answer }}{% if not loop.last %}, {% endif %}
+                                            {% endfor %}
+                                        {% endif %}
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if eval.is_evaluated %}
+                                        <span class="badge bg-success">Оценено</span>
+                                    {% else %}
+                                        <span class="badge bg-warning">Ожидает оценки</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <a href="{{ url_for('evaluate_text', result_id=eval.result.id, question_id=eval.question.id) }}" 
+                                       class="btn btn-primary btn-sm">
+                                        {% if eval.is_evaluated %}
+                                            Изменить оценку
+                                        {% else %}
+                                            Оценить
+                                        {% endif %}
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <p class="text-muted">Нет ответов для оценки в этом блоке</p>
+            {% endif %}
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %} 

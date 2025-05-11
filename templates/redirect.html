@@ -1,0 +1,13 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Перенаправление...</title>
+    <meta http-equiv="refresh" content="0;url={{ url }}">
+</head>
+<body>
+    <p>Если вы не были перенаправлены автоматически, <a href="{{ url }}">нажмите здесь</a>.</p>
+    <script>
+        window.location.href = "{{ url }}";
+    </script>
+</body>
+</html> 
