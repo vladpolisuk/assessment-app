@@ -165,3 +165,59 @@ def assessment_stats():
         print("Ошибка при загрузке статистики:", e)
         flash('Произошла ошибка при загрузке статистики', 'error')
         return redirect(url_for('index')) 
+
+@app.route('/assessment_system')
+@login_required
+def assessment_system():    
+    try:
+        # Define excluded blocks
+        excluded_blocks = [
+            'Конформизм',
+            'Самооценка',
+            'Оценка рабочей группой'
+        ]
+        
+        # Get all blocks except the excluded ones
+        blocks = AssessmentBlock.query.filter(
+            ~AssessmentBlock.name.in_(excluded_blocks)
+        ).all()
+        
+        # For each block get current user's results
+        for block in blocks:
+            result = AssessmentResult.query.filter_by(
+                user_id=session['user_id'],
+                block_id=block.id
+            ).order_by(AssessmentResult.date.desc()).first()
+            
+            block.avg_score = result.score if result else None
+        
+        # Get expert count
+        expert_count = User.query.filter_by(role='expert').count()
+        
+        # If current user is expert, decrease count by 1
+        if session.get('role') == 'expert':
+            expert_count -= 1
+        
+        return render_template('assessment_system.html', blocks=blocks, expert_count=expert_count)
+    except Exception as e:
+        debug_print(f"Ошибка при загрузке блока assessment_system: {str(e)}")
+        debug_print(f"Трейс ошибки:\n{traceback.format_exc()}")
+        flash('Произошла ошибка при загрузке блока', 'error')
+        return redirect(url_for('index')) 
+
+@app.route('/take_assessment')
+@login_required
+def take_assessment():
+    # Define excluded blocks
+    excluded_blocks = [
+        'Конформизм',
+        'Самооценка',
+        'Оценка рабочей группой'
+    ]
+    
+    # Get all blocks except the excluded ones
+    blocks = AssessmentBlock.query.filter(
+        ~AssessmentBlock.name.in_(excluded_blocks)
+    ).all()
+    
+    return render_template('take_assessment.html', blocks=blocks) 

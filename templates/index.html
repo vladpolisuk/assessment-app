@@ -18,6 +18,8 @@
                                     Администратор
                                 {% elif session.get('role') == 'expert' %}
                                     Эксперт
+                                {% elif session.get('role') == 'working_group' %}
+                                    Рабочая группа
                                 {% else %}
                                     Пользователь
                                 {% endif %}
@@ -25,12 +27,12 @@
                             <p class="mb-0">Вы можете начать оценку своих компетенций или просмотреть результаты предыдущих оценок.</p>
                         </div>
                         
-                        <div class="d-grid gap-2 d-md-flex justify-content-md-start">
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-start mb-4">
                             <a href="{{ url_for('assessment_system') }}" class="btn btn-primary">
                                 <i class="bi bi-clipboard-data"></i> Начать оценку
                             </a>
-                            <a href="{{ url_for('assessment_results') }}" class="btn btn-outline-primary">
-                                <i class="bi bi-graph-up"></i> Мои результаты
+                            <a href="{{ url_for('profile') }}" class="btn btn-outline-primary">
+                                <i class="bi bi-person"></i> Профиль
                             </a>
                         </div>
                     {% else %}
@@ -39,7 +41,7 @@
                             <p class="mb-0">Для доступа к системе оценки необходимо войти в систему или зарегистрироваться.</p>
                         </div>
                         
-                        <div class="d-grid gap-2 d-md-flex justify-content-md-start">
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-start mb-4">
                             <a href="{{ url_for('login') }}" class="btn btn-primary">
                                 <i class="bi bi-box-arrow-in-right"></i> Войти
                             </a>
@@ -48,6 +50,73 @@
                             </a>
                         </div>
                     {% endif %}
+
+                    <!-- Добавляем информационные блоки -->
+                    <div class="row mt-4">
+                        <div class="col-md-6">
+                            <h4><i class="bi bi-stars text-warning"></i> Преимущества системы</h4>
+                            <ul class="list-unstyled">
+                                <li class="mb-2"><i class="bi bi-check-circle-fill text-success"></i> Комплексная оценка навыков</li>
+                                <li class="mb-2"><i class="bi bi-check-circle-fill text-success"></i> Экспертная проверка кода</li>
+                                <li class="mb-2"><i class="bi bi-check-circle-fill text-success"></i> Детальная статистика прогресса</li>
+                                <li class="mb-2"><i class="bi bi-check-circle-fill text-success"></i> Рекомендации по развитию</li>
+                            </ul>
+                        </div>
+                        <div class="col-md-6">
+                            <h4><i class="bi bi-graph-up text-primary"></i> Развитие навыков</h4>
+                            <ul class="list-unstyled">
+                                <li class="mb-2"><i class="bi bi-arrow-right-circle text-primary"></i> Frontend-разработка</li>
+                                <li class="mb-2"><i class="bi bi-arrow-right-circle text-primary"></i> Квалиметрическая компетентность</li>
+                                <li class="mb-2"><i class="bi bi-arrow-right-circle text-primary"></i> Креативное мышление</li>
+                                <li class="mb-2"><i class="bi bi-arrow-right-circle text-primary"></i> Работа в команде</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Добавляем блок с этапами оценки -->
+            <div class="card mb-4">
+                <div class="card-body">
+                    <h3 class="card-title"><i class="bi bi-123 text-primary"></i> Этапы оценки компетенций</h3>
+                    <div class="timeline mt-4">
+                        <div class="row mb-4">
+                            <div class="col-auto">
+                                <div class="timeline-number bg-primary text-white rounded-circle p-3">1</div>
+                            </div>
+                            <div class="col">
+                                <h5>Техническая оценка</h5>
+                                <p>Прохождение тестов на знание frontend-технологий, включая практические задания по программированию.</p>
+                            </div>
+                        </div>
+                        <div class="row mb-4">
+                            <div class="col-auto">
+                                <div class="timeline-number bg-primary text-white rounded-circle p-3">2</div>
+                            </div>
+                            <div class="col">
+                                <h5>Квалиметрическая оценка</h5>
+                                <p>Оценка способности к анализу качества кода и технических решений.</p>
+                            </div>
+                        </div>
+                        <div class="row mb-4">
+                            <div class="col-auto">
+                                <div class="timeline-number bg-primary text-white rounded-circle p-3">3</div>
+                            </div>
+                            <div class="col">
+                                <h5>Оценка креативности</h5>
+                                <p>Решение нестандартных задач и демонстрация творческого подхода к разработке.</p>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-auto">
+                                <div class="timeline-number bg-primary text-white rounded-circle p-3">4</div>
+                            </div>
+                            <div class="col">
+                                <h5>Экспертная оценка</h5>
+                                <p>Проверка практических навыков опытными специалистами и получение рекомендаций.</p>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -55,32 +124,36 @@
         <div class="col-md-4">
             <div class="card mb-4">
                 <div class="card-body">
-                    <h5 class="card-title">О системе</h5>
+                    <h5 class="card-title"><i class="bi bi-info-circle text-info"></i> О системе</h5>
                     <ul class="list-unstyled">
-                        <li class="mb-2">
+                        <li class="mb-3">
                             <i class="bi bi-check-circle text-success"></i>
-                            Оценка технических навыков
+                            <strong>Оценка технических навыков</strong>
+                            <p class="small text-muted ms-4">Комплексное тестирование знаний и умений в области frontend-разработки</p>
                         </li>
-                        <li class="mb-2">
+                        <li class="mb-3">
                             <i class="bi bi-check-circle text-success"></i>
-                            Экспертная проверка кода
+                            <strong>Экспертная проверка кода</strong>
+                            <p class="small text-muted ms-4">Анализ качества кода опытными разработчиками</p>
                         </li>
-                        <li class="mb-2">
+                        <li class="mb-3">
                             <i class="bi bi-check-circle text-success"></i>
-                            Взаимооценка коллег
+                            <strong>Взаимооценка коллег</strong>
+                            <p class="small text-muted ms-4">Оценка soft skills и командной работы</p>
                         </li>
-                        <li class="mb-2">
+                        <li class="mb-3">
                             <i class="bi bi-check-circle text-success"></i>
-                            Детальная статистика
+                            <strong>Детальная статистика</strong>
+                            <p class="small text-muted ms-4">Подробный анализ результатов и прогресса</p>
                         </li>
                     </ul>
                 </div>
             </div>
             
             {% if session.get('role') in ['expert', 'admin'] %}
-            <div class="card">
+            <div class="card mb-4">
                 <div class="card-body">
-                    <h5 class="card-title">Экспертные функции</h5>
+                    <h5 class="card-title"><i class="bi bi-shield-check text-primary"></i> Экспертные функции</h5>
                     <div class="d-grid gap-2">
                         <a href="{{ url_for('expert_code_evaluations') }}" class="btn btn-outline-primary">
                             <i class="bi bi-code-square"></i> Проверка кода
@@ -92,7 +165,51 @@
                 </div>
             </div>
             {% endif %}
+
+            <!-- Добавляем блок с последними обновлениями -->
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title"><i class="bi bi-bell text-warning"></i> Последние обновления</h5>
+                    <div class="list-group list-group-flush">
+                        <div class="list-group-item">
+                            <div class="d-flex w-100 justify-content-between">
+                                <h6 class="mb-1">Новые тесты</h6>
+                                <small class="text-muted">3 дня назад</small>
+                            </div>
+                            <p class="mb-1 small">Добавлены новые тесты по React и TypeScript</p>
+                        </div>
+                        <div class="list-group-item">
+                            <div class="d-flex w-100 justify-content-between">
+                                <h6 class="mb-1">Улучшена статистика</h6>
+                                <small class="text-muted">Неделю назад</small>
+                            </div>
+                            <p class="mb-1 small">Добавлены новые графики и метрики</p>
+                        </div>
+                        <div class="list-group-item">
+                            <div class="d-flex w-100 justify-content-between">
+                                <h6 class="mb-1">Обновление системы</h6>
+                                <small class="text-muted">2 недели назад</small>
+                            </div>
+                            <p class="mb-1 small">Улучшена производительность и добавлены новые функции</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 </div>
+
+{% block styles %}
+<style>
+.timeline-number {
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+}
+</style>
+{% endblock %}
+
 {% endblock %} 

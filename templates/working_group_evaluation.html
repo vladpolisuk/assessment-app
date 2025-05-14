@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+
+{% block title %}Оценка деловитости экспертов - Система оценки{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{{ url_for('assessment_system') }}">Система оценки</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Оценка деловитости экспертов</li>
+        </ol>
+    </nav>
+
+    <h2 class="mb-4">Оценка деловитости экспертов (Критерий 3)</h2>
+    
+    <div class="alert alert-info mb-4">
+        <p>Этот критерий позволяет членам рабочей группы оценить деловитость экспертов. Максимальный балл за этот критерий - 15.</p>
+        <p class="mb-0"><strong>Примечание:</strong> После оценки всех экспертов будет рассчитан коэффициент конкордации Кенделла. Если он будет меньше 0.5, вам будет предложено произвести оценку повторно.</p>
+    </div>
+    
+    {% if not experts %}
+    <div class="alert alert-warning">
+        <i class="bi bi-exclamation-triangle me-2"></i>
+        В системе нет экспертов для оценки.
+    </div>
+    {% else %}
+    <div class="row">
+        {% for expert in experts %}
+        <div class="col-md-6 mb-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Оценка эксперта: {{ expert.username }}</h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST" action="{{ url_for('submit_working_group_evaluation') }}">
+                        <input type="hidden" name="expert_id" value="{{ expert.id }}">
+                        
+                        {% for criterion in block.criteria %}
+                        <div class="mb-4">
+                            <label class="form-label">{{ criterion.name }}</label>
+                            <select name="criteria_{{ loop.index }}" class="form-select" required>
+                                <option value="">Выберите значение</option>
+                                {% for option in criterion.options %}
+                                <option value="{{ option.value }}">{{ option.text }} ({{ option.value }} баллов)</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        {% endfor %}
+                        
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary">Сохранить оценку</button>
+                        </div>
+                    </form>
+                </div>
+                
+                <div class="card-footer">
+                    <div class="alert alert-info mb-0">
+                        <i class="bi bi-info-circle me-2"></i>
+                        Максимальный балл: {{ block.max_score }}
+                        <br>
+                        Вес в общей оценке: {{ "%.2f"|format(block.weight) }}
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+    
+    <div class="mt-4">
+        <a href="{{ url_for('assessment_system') }}" class="btn btn-secondary">Вернуться к системе оценки</a>
+    </div>
+    
+    {% if kendall_coefficient is defined and kendall_coefficient is not none %}
+        <div class="card mt-4">
+            <div class="card-header bg-light">
+                <h5 class="card-title mb-0">Результаты оценки</h5>
+            </div>
+            <div class="card-body">
+                <p><strong>Коэффициент конкордации Кенделла:</strong> {{ kendall_coefficient|round(2) }}</p>
+                
+                {% if kendall_coefficient >= 0.5 %}
+                    <div class="alert alert-success">
+                        <p class="mb-0">Мнения членов рабочей группы согласованы. Результаты оценки приняты.</p>
+                    </div>
+                {% else %}
+                    <div class="alert alert-danger">
+                        <p class="mb-0">Мнения членов рабочей группы недостаточно согласованы. Пожалуйста, повторите оценку, обсудив критерии с другими членами рабочей группы.</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    {% endif %}
+</div>
+{% endblock %} 

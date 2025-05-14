@@ -26,6 +26,7 @@
                             <select name="role" class="form-select form-select-sm d-inline-block w-auto" onchange="this.form.submit()">
                                 <option value="user" {% if user.role == 'user' %}selected{% endif %}>Пользователь</option>
                                 <option value="expert" {% if user.role == 'expert' %}selected{% endif %}>Эксперт</option>
+                                <option value="working_group" {% if user.role == 'working_group' %}selected{% endif %}>Рабочая группа</option>
                                 <option value="admin" {% if user.role == 'admin' %}selected{% endif %}>Администратор</option>
                             </select>
                         </form>

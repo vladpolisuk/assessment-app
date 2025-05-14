@@ -4,6 +4,7 @@ import sys
 import json
 from datetime import datetime
 import importlib.util
+import string
 
 # Динамически импортируем основной модуль приложения (1.py)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -22,138 +23,246 @@ PeerEvaluation = main_app.PeerEvaluation
 ExpertCodeEvaluation = main_app.ExpertCodeEvaluation
 app = main_app.app
 
-EXPERT_NAMES = ['Иванов', 'Петров', 'Сидоров', 'Смирнов', 'Кузнецов']
+# Расширенный список имен для генерации пользователей
+FIRST_NAMES = ['Иван', 'Петр', 'Сергей', 'Александр', 'Михаил', 'Дмитрий', 'Андрей', 'Николай', 'Владимир', 'Игорь']
+LAST_NAMES = ['Иванов', 'Петров', 'Сидоров', 'Смирнов', 'Кузнецов', 'Попов', 'Соколов', 'Лебедев', 'Козлов', 'Новиков']
 
-# Примеры кода для code-вопросов
+# Примеры кода для code-вопросов с разной сложностью
 EXAMPLE_CODES = [
-    'function test() { return 42; }',
-    'let a = 1; let b = 2; return a + b;',
-    'console.log("Hello, world!");',
+    # Простые примеры
     'function sum(a, b) { return a + b; }',
-    'for (let i = 0; i < 10; i++) { console.log(i); }'
+    'console.log("Hello, world!");',
+    'let x = 10; console.log(x);',
+    # Средние примеры
+    '''function factorial(n) {
+    if (n <= 1) return 1;
+    return n * factorial(n-1);
+}''',
+    '''const arr = [1, 2, 3, 4, 5];
+const doubled = arr.map(x => x * 2);''',
+    # Сложные примеры
+    '''class Calculator {
+    constructor() {
+        this.value = 0;
+    }
+    add(x) {
+        this.value += x;
+        return this;
+    }
+    subtract(x) {
+        this.value -= x;
+        return this;
+    }
+    getResult() {
+        return this.value;
+    }
+}'''
 ]
 
-def random_answer(question, expert_idx=0):
+def generate_random_user():
+    """Генерация случайного пользователя"""
+    first_name = random.choice(FIRST_NAMES)
+    last_name = random.choice(LAST_NAMES)
+    username = f"{first_name}_{last_name}_{random.randint(1, 999)}"
+    role = random.choice(['user', 'expert', 'working_group'])
+    return username, role
+
+def random_answer(question, user_id):
+    """Генерация случайного ответа с учетом ID пользователя"""
+    random.seed(user_id + hash(question.text) % 1000)  # Уникальный seed для каждой комбинации пользователь-вопрос
+    
     if question.type == 'single':
         options = json.loads(question.options)
-        # Разные эксперты выбирают разные варианты
-        return str((expert_idx + 1) % len(options))
+        return str(random.randint(0, len(options) - 1))
+    
     elif question.type == 'multiple':
         options = json.loads(question.options)
-        indices = list(range(len(options)))
-        random.seed(expert_idx)
-        random.shuffle(indices)
-        selected = indices[:(expert_idx % len(options)) + 1]
+        num_selections = random.randint(1, len(options))
+        selected = random.sample(range(len(options)), num_selections)
         return [str(i) for i in selected]
+    
     elif question.type == 'open':
-        return f'Ответ эксперта {expert_idx+1}'
+        words = ['отличный', 'хороший', 'средний', 'удовлетворительный', 'неудовлетворительный']
+        adjectives = ['очень', 'достаточно', 'относительно', 'не очень', 'крайне']
+        return f"{random.choice(adjectives)} {random.choice(words)} ответ от пользователя {user_id}"
+    
     elif question.type == 'code':
-        # Разные коды для разных экспертов
-        return EXAMPLE_CODES[expert_idx % len(EXAMPLE_CODES)] + f' // expert {expert_idx+1}'
+        code = random.choice(EXAMPLE_CODES)
+        # Добавляем случайные комментарии и модификации
+        comments = [
+            '// Оптимизированная версия',
+            '// Требует доработки',
+            '// Рабочий вариант',
+            '// Экспериментальная версия'
+        ]
+        return f"{code}\n{random.choice(comments)} (user_{user_id})"
+    
     elif question.type == 'matching':
         options = json.loads(question.options)
-        # Сдвиг индексов для каждого эксперта
-        return [str((i + expert_idx) % len(options)) for i in range(len(options))]
-    else:
-        return ''
+        matches = list(range(len(options)))
+        random.shuffle(matches)
+        return [str(i) for i in matches]
+    
+    return ''
+
+def calculate_score(answers, questions):
+    """Расчет случайного, но правдоподобного балла на основе ответов"""
+    total_possible = len(questions)
+    base_score = random.uniform(0.4, 0.9)  # Базовый уровень успешности
+    question_scores = []
+    
+    for q in questions:
+        if q.id in answers:
+            # Генерируем случайный балл для каждого вопроса
+            score = random.uniform(base_score - 0.2, base_score + 0.2)
+            score = max(0, min(1, score))  # Ограничиваем значением от 0 до 1
+            question_scores.append(score)
+    
+    if not question_scores:
+        return 0
+    
+    # Считаем средний балл и масштабируем его до максимального возможного
+    avg_score = sum(question_scores) / len(question_scores)
+    return round(avg_score * total_possible, 1)
 
 def fill_test_data():
     with app.app_context():
-        # Создаём экспертов, если их нет
-        experts = []
-        for name in EXPERT_NAMES:
-            user = User.query.filter_by(username=name).first()
-            if not user:
-                user = User(username=name, role='expert')
-                user.set_password(name)
-                db.session.add(user)
-                db.session.commit()
-            experts.append(user)
-        print(f'Эксперты: {[e.username for e in experts]}')
+        # Используем существующих пользователей
+        admin = User.query.filter_by(role='admin').first()
+        experts = User.query.filter_by(role='expert').all()
+        working_group = User.query.filter_by(role='working_group').all()
+        
+        all_users = [admin] + experts + working_group
+        print(f'Найдено пользователей: админ - 1, экспертов - {len(experts)}, рабочая группа - {len(working_group)}')
 
+        # Заполняем результаты оценки для всех пользователей
         blocks = AssessmentBlock.query.all()
-        for expert_idx, expert in enumerate(experts):
+        
+        for user in all_users:
             for block in blocks:
                 # Пропускаем, если уже есть результат
-                existing = AssessmentResult.query.filter_by(user_id=expert.id, block_id=block.id).first()
+                existing = AssessmentResult.query.filter_by(user_id=user.id, block_id=block.id).first()
                 if existing:
                     continue
-                # --- Взаимооценка ---
-                if block.id == 5 or 'Взаимооценка' in block.name:
+
+                # Особая обработка для блока взаимооценки
+                if block.id == 4 or 'Взаимооценка' in block.name:
                     answers = {}
                     total_score = 0
-                    for other in experts:
-                        if other.id == expert.id:
-                            continue
-                        # Оценка зависит от индекса эксперта и оцениваемого
-                        score = 5 + ((expert_idx + other.id) % 6)  # 5..10
+                    other_users = [u for u in all_users if u.id != user.id]
+                    
+                    # Каждый пользователь оценивает всех остальных
+                    for other in other_users:
+                        # Генерируем более реалистичные оценки (5-10)
+                        score = random.randint(5, 10)
                         answers[str(other.id)] = str(score)
                         total_score += score
+                        
                         # Создаём PeerEvaluation
-                        existing_peer = PeerEvaluation.query.filter_by(evaluator_id=expert.id, evaluated_id=other.id).first()
+                        existing_peer = PeerEvaluation.query.filter_by(
+                            evaluator_id=user.id,
+                            evaluated_id=other.id
+                        ).first()
                         if not existing_peer:
                             evaluation = PeerEvaluation(
-                                evaluator_id=expert.id,
+                                evaluator_id=user.id,
                                 evaluated_id=other.id,
                                 score=score
                             )
                             db.session.add(evaluation)
+                    
+                    # Рассчитываем средний балл и нормализуем его к максимальному баллу блока
+                    avg_score = total_score / len(other_users) if other_users else 0
+                    # Средний балл сейчас в диапазоне 0-10, нормализуем к максимальному баллу блока
+                    normalized_score = (avg_score / 10) * block.max_score
+                    
                     result = AssessmentResult(
-                        user_id=expert.id,
+                        user_id=user.id,
+                        block_id=block.id,
+                        score=normalized_score,
+                        answers=json.dumps(answers, ensure_ascii=False)
+                    )
+                    db.session.add(result)
+                    
+                else:
+                    # Обработка остальных блоков
+                    questions = AssessmentQuestion.query.filter_by(block_id=block.id).all()
+                    answers = {}
+                    
+                    # Отвечаем на все вопросы
+                    for q in questions:
+                        ans = random_answer(q, user.id)
+                        answers[str(q.id)] = ans if isinstance(ans, str) else json.dumps(ans)
+                    
+                    # Генерируем баллы как процент от максимально возможного для блока
+                    max_possible = block.max_score
+                    min_percent = 0.15  # Минимум 15% от максимального балла
+                    max_percent = 0.85  # Максимум 85% от максимального балла
+                    
+                    # Для экспертов и админа генерируем более высокие баллы
+                    if user.role in ['expert', 'admin']:
+                        min_percent = 0.30  # Минимум 30% от максимального балла
+                    
+                    # Рассчитываем финальный балл как процент от максимального
+                    percent = random.uniform(min_percent, max_percent)
+                    total_score = round(max_possible * percent, 1)
+                    
+                    result = AssessmentResult(
+                        user_id=user.id,
                         block_id=block.id,
                         score=total_score,
                         answers=json.dumps(answers, ensure_ascii=False)
                     )
                     db.session.add(result)
-                    db.session.commit()
-                    continue
-                # --- Остальные блоки ---
-                questions = AssessmentQuestion.query.filter_by(block_id=block.id).all()
-                answers = {}
-                total_score = 0
-                for q in questions:
-                    ans = random_answer(q, expert_idx)
-                    answers[str(q.id)] = ans if isinstance(ans, str) else json.dumps(ans)
-                    # Простейшее начисление баллов (можно усложнить)
-                    total_score += 1
-                result = AssessmentResult(
-                    user_id=expert.id,
-                    block_id=block.id,
-                    score=total_score,
-                    answers=json.dumps(answers, ensure_ascii=False)
-                )
-                db.session.add(result)
+                
                 db.session.commit()
 
-        # Экспертные оценки кода: каждый эксперт оценивает коды других
+        # Экспертные оценки кода
         code_questions = AssessmentQuestion.query.filter_by(type='code').all()
+        
         for question in code_questions:
             results = AssessmentResult.query.filter(AssessmentResult.answers.like(f'%{question.id}%')).all()
             for result in results:
                 if not result.answers:
                     continue
+                    
                 answers = json.loads(result.answers)
                 user_code = answers.get(str(question.id), '')
                 if not user_code:
                     continue
+                
+                # Каждый эксперт оценивает код
                 for expert in experts:
                     if expert.id == result.user_id:
                         continue
+                        
                     existing = ExpertCodeEvaluation.query.filter_by(
                         assessment_result_id=result.id,
                         question_id=question.id,
                         expert_id=expert.id
                     ).first()
+                    
                     if not existing:
+                        # Генерируем более разнообразные комментарии
+                        comments = [
+                            "Код хорошо структурирован, но есть возможности для оптимизации",
+                            "Требуется улучшение обработки краевых случаев",
+                            "Отличная реализация, понятная документация",
+                            "Код работает, но нужно улучшить читаемость",
+                            "Хорошее решение, но можно сделать более эффективно"
+                        ]
+                        
+                        # Генерируем более высокие оценки (5-10)
                         evaluation = ExpertCodeEvaluation(
                             assessment_result_id=result.id,
                             question_id=question.id,
                             expert_id=expert.id,
-                            score=5 + ((expert.id + result.id) % 6),
-                            comments=f'Эксперт {expert.username} оценил код пользователя {result.user_id}',
+                            score=random.randint(5, 10),
+                            comments=random.choice(comments),
                             date=datetime.utcnow()
                         )
                         db.session.add(evaluation)
+                        
         db.session.commit()
         print('Тестовые данные успешно добавлены!')
 

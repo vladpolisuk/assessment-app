@@ -1,0 +1,117 @@
+{% extends "base.html" %}
+
+{% block title %}Оценка опыта - Система оценки{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{{ url_for('assessment_system') }}">Система оценки</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Оценка опыта</li>
+        </ol>
+    </nav>
+
+    <h2 class="mb-4">Оценка опыта (Критерий 1)</h2>
+    
+    <div class="alert alert-info mb-4">
+        <p>Этот критерий оценивает ваш профессиональный опыт, образование и научную квалификацию. Максимальный балл за этот критерий - 42.</p>
+    </div>
+    
+    <form method="POST" action="{{ url_for('submit_working_group_experience') }}">
+        <div class="card mb-4">
+            <div class="card-header bg-light">
+                <h5 class="card-title mb-0">Срок работы</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-8">
+                        <select name="work_experience" class="form-select" required>
+                            <option value="" selected disabled>Выберите срок работы...</option>
+                            <option value="3">До 5 лет (3 балла)</option>
+                            <option value="5">5-10 лет (5 баллов)</option>
+                            <option value="7">10-15 лет (7 баллов)</option>
+                            <option value="10">Более 15 лет (10 баллов)</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card mb-4">
+            <div class="card-header bg-light">
+                <h5 class="card-title mb-0">Образование</h5>
+                <p class="text-muted small mt-1 mb-0">Можно выбрать несколько вариантов</p>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-8">
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="checkbox" name="education" value="1" id="edu_special">
+                            <label class="form-check-label" for="edu_special">Среднее специальное (+1 балл)</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="checkbox" name="education" value="3" id="edu_specialist">
+                            <label class="form-check-label" for="edu_specialist">Специалитет (+3 балла)</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="checkbox" name="education" value="3" id="edu_bachelor">
+                            <label class="form-check-label" for="edu_bachelor">Бакалавриат (+3 балла)</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="checkbox" name="education" value="4" id="edu_master">
+                            <label class="form-check-label" for="edu_master">Магистратура (+4 балла)</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="education" value="5" id="edu_postgrad">
+                            <label class="form-check-label" for="edu_postgrad">Аспирантура (+5 баллов)</label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card mb-4">
+            <div class="card-header bg-light">
+                <h5 class="card-title mb-0">Ученая степень</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-8">
+                        <select name="degree" class="form-select" required>
+                            <option value="0" selected>Нет ученой степени (0 баллов)</option>
+                            <option value="10">Кандидат наук (по тематике экспертизы) (10 баллов)</option>
+                            <option value="15">Доктор наук (по тематике экспертизы) (15 баллов)</option>
+                            <option value="5">Кандидат наук (не по тематике экспертизы) (5 баллов)</option>
+                            <option value="8">Доктор наук (не по тематике экспертизы) (8 баллов)</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card mb-4">
+            <div class="card-header bg-light">
+                <h5 class="card-title mb-0">Ученое звание</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-8">
+                        <select name="title" class="form-select" required>
+                            <option value="0" selected>Нет ученого звания (0 баллов)</option>
+                            <option value="10">Доцент (по тематике экспертизы) (10 баллов)</option>
+                            <option value="5">Доцент (не по тематике экспертизы) (5 баллов)</option>
+                            <option value="15">Профессор (по тематике экспертизы) (15 баллов)</option>
+                            <option value="8">Профессор (не по тематике экспертизы) (8 баллов)</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="d-grid gap-2 col-md-6 mx-auto">
+            <button type="submit" class="btn btn-primary btn-lg">Сохранить</button>
+            <a href="{{ url_for('assessment_system') }}" class="btn btn-outline-secondary">Вернуться к системе оценки</a>
+        </div>
+    </form>
+</div>
+{% endblock %} 

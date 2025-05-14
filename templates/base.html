@@ -27,6 +27,10 @@
         .btn {
             border-radius: 5px;
         }
+        /* Hide assessment results link */
+        .nav-item a[href*="assessment_results"] {
+            display: none !important;
+        }
     </style>
     {% block styles %}{% endblock %}
 </head>
@@ -69,6 +73,13 @@
                             <li class="nav-item">
                                 <a class="nav-link {% if request.endpoint == 'assessment_stats' %}active{% endif %}" href="{{ url_for('assessment_stats') }}">
                                     <i class="bi bi-bar-chart"></i> Статистика
+                                </a>
+                            </li>
+                        {% endif %}
+                        {% if session.get('role') == 'working_group' %}
+                            <li class="nav-item">
+                                <a class="nav-link {% if request.endpoint == 'working_group_evaluation' %}active{% endif %}" href="{{ url_for('working_group_evaluation') }}">
+                                    <i class="bi bi-people-fill"></i> Оценка экспертов
                                 </a>
                             </li>
                         {% endif %}

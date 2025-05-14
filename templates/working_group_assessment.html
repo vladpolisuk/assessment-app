@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container">
+    <h2 class="mb-4">{{ title }}</h2>
+    
+    <div class="card">
+        <div class="card-header">
+            <h5 class="mb-0">{{ block.description }}</h5>
+        </div>
+        <div class="card-body">
+            <form method="POST" action="{{ url_for('submit_working_group_assessment') }}">
+                <input type="hidden" name="assessment_type" value="{{ assessment_type }}">
+                
+                {% for criterion in block.criteria %}
+                <div class="mb-4">
+                    <label class="form-label">{{ criterion.name }}</label>
+                    <select name="criteria_{{ loop.index }}" class="form-select" required>
+                        <option value="">Выберите значение</option>
+                        {% for option in criterion.options %}
+                        <option value="{{ option.value }}">{{ option.text }} ({{ option.value }} баллов)</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                {% endfor %}
+                
+                <div class="d-grid gap-2 col-6 mx-auto">
+                    <button type="submit" class="btn btn-primary">Сохранить оценку</button>
+                    <a href="{{ url_for('assessment_system') }}" class="btn btn-secondary">Вернуться</a>
+                </div>
+            </form>
+        </div>
+        
+        <div class="card-footer">
+            <div class="alert alert-info mb-0">
+                <i class="bi bi-info-circle me-2"></i>
+                Максимальный балл за этот блок: {{ block.max_score }}
+                <br>
+                Вес блока в общей оценке: {{ "%.2f"|format(block.weight) }}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

@@ -1,0 +1,101 @@
+{% extends "base.html" %}
+
+{% block title %}Оценка заинтересованности - Система оценки{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{{ url_for('assessment_system') }}">Система оценки</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Оценка заинтересованности</li>
+        </ol>
+    </nav>
+
+    <h2 class="mb-4">Оценка заинтересованности в работе экспертной комиссии (Критерий 2)</h2>
+    
+    <div class="alert alert-info mb-4">
+        <p>Этот критерий оценивает вашу заинтересованность в работе экспертной комиссии. Максимальный балл за этот критерий - 24.</p>
+    </div>
+    
+    <form method="POST" action="{{ url_for('submit_working_group_interest') }}">
+        <div class="card mb-4">
+            <div class="card-header bg-light">
+                <h5 class="card-title mb-0">Какой процент от рабочего времени готовы посвятить участию в экспертизе?</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-8">
+                        <select name="work_time" class="form-select" required>
+                            <option value="" selected disabled>Выберите вариант...</option>
+                            <option value="3">Менее 10% (3 балла)</option>
+                            <option value="5">10-25% (5 баллов)</option>
+                            <option value="8">25-40% (8 баллов)</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card mb-4">
+            <div class="card-header bg-light">
+                <h5 class="card-title mb-0">Будете ли вы использовать результаты экспертизы в своих исследованиях?</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-8">
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="research_use" value="8" id="research_yes" required>
+                            <label class="form-check-label" for="research_yes">Да (8 баллов)</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="research_use" value="6" id="research_probably_yes">
+                            <label class="form-check-label" for="research_probably_yes">Скорее да (6 баллов)</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="research_use" value="4" id="research_probably_no">
+                            <label class="form-check-label" for="research_probably_no">Скорее нет (4 балла)</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="research_use" value="2" id="research_no">
+                            <label class="form-check-label" for="research_no">Нет (2 балла)</label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card mb-4">
+            <div class="card-header bg-light">
+                <h5 class="card-title mb-0">Планируете ли вы дальнейшее участие в близких по тематике экспертизах?</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-8">
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="future_participation" value="8" id="future_yes" required>
+                            <label class="form-check-label" for="future_yes">Да (8 баллов)</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="future_participation" value="6" id="future_probably_yes">
+                            <label class="form-check-label" for="future_probably_yes">Скорее да (6 баллов)</label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="future_participation" value="4" id="future_probably_no">
+                            <label class="form-check-label" for="future_probably_no">Скорее нет (4 балла)</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="future_participation" value="2" id="future_no">
+                            <label class="form-check-label" for="future_no">Нет (2 балла)</label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="d-grid gap-2 col-md-6 mx-auto">
+            <button type="submit" class="btn btn-primary btn-lg">Сохранить</button>
+            <a href="{{ url_for('assessment_system') }}" class="btn btn-outline-secondary">Вернуться к системе оценки</a>
+        </div>
+    </form>
+</div>
+{% endblock %} 

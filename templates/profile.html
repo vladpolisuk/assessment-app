@@ -1,79 +1,227 @@
 {% extends "base.html" %}
 
-{% block title %}Профиль{% endblock %}
+{% block title %}Профиль пользователя{% endblock %}
+
+{% block styles %}
+<style>
+.profile-header {
+    background: linear-gradient(135deg, #6c757d 0%, #495057 100%);
+    color: white;
+    padding: 2rem;
+    border-radius: 0.5rem;
+    margin-bottom: 2rem;
+}
+
+.profile-header h2 {
+    margin: 0;
+    font-weight: 600;
+}
+
+.role-badge {
+    display: inline-block;
+    padding: 0.5rem 1rem;
+    border-radius: 2rem;
+    font-weight: 500;
+    margin-top: 1rem;
+}
+
+.role-admin { background-color: #dc3545; }
+.role-expert { background-color: #198754; }
+.role-working_group { background-color: #0d6efd; }
+.role-user { background-color: #6c757d; }
+
+.competency-card {
+    transition: transform 0.2s;
+}
+
+.competency-card:hover {
+    transform: translateY(-5px);
+}
+
+.progress {
+    height: 1.5rem;
+    font-size: 1rem;
+    background-color: #e9ecef;
+    margin: 1rem 0;
+}
+
+.progress-bar {
+    transition: width 1s ease-in-out;
+}
+
+.competency-level {
+    padding: 1rem;
+    border-radius: 0.5rem;
+    margin-bottom: 1rem;
+    color: white;
+}
+
+.level-max { background-color: #0d6efd; }
+.level-high { background-color: #198754; }
+.level-above-avg { background-color: #20c997; }
+.level-avg { background-color: #ffc107; color: #000; }
+.level-low { background-color: #fd7e14; }
+.level-none { background-color: #dc3545; }
+
+.stats-card {
+    border-left: 4px solid;
+    margin-bottom: 1rem;
+}
+
+.stats-card.completed { border-left-color: #198754; }
+.stats-card.in-progress { border-left-color: #ffc107; }
+.stats-card.pending { border-left-color: #dc3545; }
+</style>
+{% endblock %}
 
 {% block content %}
 <div class="container mt-4">
-    <h2>Профиль пользователя</h2>
-    <div class="row">
-        <div class="col-md-6">
-    <div class="card mb-4">
-        <div class="card-body">
-                    <h5 class="card-title">Информация о пользователе</h5>
-                    <p><strong>Имя пользователя:</strong> {{ user.username }}</p>
-                    <p><strong>Роль:</strong> 
+    <div class="profile-header shadow">
+        <div class="row align-items-center">
+            <div class="col-auto">
+                <i class="bi bi-person-circle" style="font-size: 4rem;"></i>
+            </div>
+            <div class="col">
+                <h2>{{ user.username }}</h2>
+                <div class="role-badge role-{{ user.role }}">
                     {% if user.role == 'admin' %}
-                        Администратор
+                        <i class="bi bi-shield-fill"></i> Администратор
                     {% elif user.role == 'expert' %}
-                        Эксперт
+                        <i class="bi bi-star-fill"></i> Эксперт
+                    {% elif user.role == 'working_group' %}
+                        <i class="bi bi-people-fill"></i> Рабочая группа
                     {% else %}
-                        Пользователь
+                        <i class="bi bi-person-fill"></i> Пользователь
                     {% endif %}
-                </p>
-            </div>
-            </div>
-        </div>
-        <div class="col-md-6">
-    <div class="card mb-4">
-        <div class="card-body">
-            <h5 class="card-title">Итоговая оценка</h5>
-                    <p><strong>Общий балл:</strong> {{ "%.2f"|format(final_score.final_score) }}%</p>
-                    <p><strong>Уровень компетентности:</strong> 
-                {% if final_score.level == 1 %}
-                            Максимальная компетентность
-                {% elif final_score.level == 2 %}
-                            Высокая компетентность
-                {% elif final_score.level == 3 %}
-                            Компетентность выше средней
-                {% elif final_score.level == 4 %}
-                            Средняя компетентность
-                {% else %}
-                            Низкая компетентность
-                {% endif %}
-                    </p>
-        </div>
+                </div>
             </div>
         </div>
     </div>
 
-    <h3>Результаты по блокам</h3>
     <div class="row">
-        {% for result in block_results %}
-        <div class="col-md-6 mb-4">
-            <div class="card">
+        <!-- Основная информация -->
+        <div class="col-md-8">
+            {% if final_score %}
+            <div class="card mb-4 shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0"><i class="bi bi-award"></i> Общий уровень компетентности</h4>
+                </div>
                 <div class="card-body">
-                    <h5 class="card-title">{{ result.block.name }}</h5>
-                    {% if result.block.name == 'Воспроизводимость' %}
-                        <p><strong>Оценка:</strong> {{ "%.2f"|format(final_score.reproducibility_score) }}%</p>
-                    {% elif result.block.name == 'Конформизм' %}
-                        <p><strong>Оценка:</strong> {{ "%.2f"|format(final_score.conformity_score) }}%</p>
-                    {% else %}
-                        <p><strong>Оценка:</strong> {{ "%.2f"|format(result.score_percentage) }}%</p>
-                    {% endif %}
-                    <div class="progress">
-                        {% if result.block.name == 'Воспроизводимость' %}
-                            <div class="progress-bar" role="progressbar" style="width: {{ final_score.reproducibility_score }}%">
-                        {% elif result.block.name == 'Конформизм' %}
-                            <div class="progress-bar" role="progressbar" style="width: {{ final_score.conformity_score }}%">
-                        {% else %}
-                            <div class="progress-bar" role="progressbar" style="width: {{ result.score_percentage }}%">
-                        {% endif %}
+                    <div class="row align-items-center">
+                        <div class="col-md-4 text-center">
+                            <div class="display-4 fw-bold text-primary">
+                                {{ "%.1f"|format(final_score.final_score) }}%
+                            </div>
+                            <p class="text-muted">Общий балл</p>
+                        </div>
+                        <div class="col-md-8">
+                            <div class="competency-level 
+                                {% if final_score.final_score == 100 %}level-max
+                                {% elif final_score.final_score >= 80 %}level-high
+                                {% elif final_score.final_score >= 60 %}level-above-avg
+                                {% elif final_score.final_score >= 40 %}level-avg
+                                {% elif final_score.final_score >= 15 %}level-low
+                                {% else %}level-none{% endif %}">
+                                <h5 class="mb-0">
+                                    {% if final_score.final_score == 100 %}
+                                        <i class="bi bi-trophy"></i> Максимальная компетентность
+                                    {% elif final_score.final_score >= 80 %}
+                                        <i class="bi bi-star"></i> Высокий уровень
+                                    {% elif final_score.final_score >= 60 %}
+                                        <i class="bi bi-arrow-up-circle"></i> Выше среднего
+                                    {% elif final_score.final_score >= 40 %}
+                                        <i class="bi bi-dash-circle"></i> Средний уровень
+                                    {% elif final_score.final_score >= 15 %}
+                                        <i class="bi bi-arrow-down-circle"></i> Низкий уровень
+                                    {% else %}
+                                        <i class="bi bi-x-circle"></i> Некомпетентен
+                                    {% endif %}
+                                </h5>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
+            {% endif %}
+
+            {% if block_results %}
+            <div class="card shadow-sm">
+                <div class="card-header bg-light">
+                    <h4 class="mb-0"><i class="bi bi-bar-chart-line"></i> Результаты по блокам</h4>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        {% for block_result in block_results %}
+                        <div class="col-md-6">
+                            <div class="competency-card card mb-4">
+                                <div class="card-body">
+                                    <h5 class="card-title">
+                                        <i class="bi bi-bookmark"></i> 
+                                        {{ block_result.block.name }}
+                                    </h5>
+                                    <div class="progress">
+                                        <div class="progress-bar {% if block_result.score_percentage >= 80 %}bg-success
+                                                               {% elif block_result.score_percentage >= 60 %}bg-info
+                                                               {% elif block_result.score_percentage >= 40 %}bg-warning
+                                                               {% else %}bg-danger{% endif %}"
+                                             role="progressbar" 
+                                             style="width: {{ block_result.score_percentage }}%" 
+                                             aria-valuenow="{{ block_result.score_percentage }}" 
+                                             aria-valuemin="0" 
+                                             aria-valuemax="100">
+                                            {{ "%.1f"|format(block_result.score_percentage) }}%
+                                        </div>
+                                    </div>
+                                    <p class="card-text small text-muted">
+                                        {% if block_result.score_percentage >= 80 %}
+                                            Отличный результат
+                                        {% elif block_result.score_percentage >= 60 %}
+                                            Хороший результат
+                                        {% elif block_result.score_percentage >= 40 %}
+                                            Требуется улучшение
+                                        {% else %}
+                                            Необходима работа над навыками
+                                        {% endif %}
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
         </div>
-        {% endfor %}
+
+        <!-- Боковая панель -->
+        <div class="col-md-4">
+            <!-- Рекомендации -->
+            {% if block_results %}
+            <div class="card shadow-sm">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0"><i class="bi bi-lightbulb"></i> Рекомендации</h5>
+                </div>
+                <div class="card-body">
+                    <ul class="list-unstyled">
+                        {% for block_result in block_results %}
+                            {% if block_result.score_percentage < 60 %}
+                            <li class="mb-3">
+                                <i class="bi bi-arrow-right-circle text-primary"></i>
+                                <strong>{{ block_result.block.name }}:</strong>
+                                <p class="small text-muted mb-0">
+                                    Рекомендуется уделить больше внимания этому направлению.
+                                    {% if block_result.score_percentage < 40 %}
+                                    Возможно, стоит пройти дополнительное обучение.
+                                    {% endif %}
+                                </p>
+                            </li>
+                            {% endif %}
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+            {% endif %}
+        </div>
     </div>
 </div>
 {% endblock %} 

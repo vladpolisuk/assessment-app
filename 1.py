@@ -91,6 +91,19 @@ class User(UserMixin, db.Model):
     def check_password(self, password):
         return check_password_hash(self.password, password)
 
+    @property
+    def role_display(self):
+        debug_print(f"Определение роли для пользователя {self.username}. Текущая роль: {self.role}")
+        roles = {
+            'user': 'Пользователь',
+            'expert': 'Эксперт',
+            'admin': 'Администратор',
+            'working_group': 'Рабочая группа'
+        }
+        display_role = roles.get(self.role, 'Пользователь')
+        debug_print(f"Отображаемая роль: {display_role}")
+        return display_role
+
 class AssessmentBlock(db.Model):
     __tablename__ = 'assessment_block'
     id = db.Column(db.Integer, primary_key=True)
@@ -227,6 +240,14 @@ def login_required(f):
         return f(*args, **kwargs)
     return decorated_function
 
+def sync_session_role():
+    """Synchronize the session role with the database role"""
+    if 'user_id' in session:
+        user = User.query.get(session['user_id'])
+        if user and session.get('role') != user.role:
+            session['role'] = user.role
+            debug_print(f"Synchronized session role to {user.role} for user {user.username}")
+
 def role_required(roles):
     def decorator(f):
         @wraps(f)
@@ -234,6 +255,10 @@ def role_required(roles):
             if 'user_id' not in session:
                 flash('Пожалуйста, войдите в систему', 'error')
                 return redirect(url_for('login'))
+            
+            # Sync session role with database role
+            sync_session_role()
+            
             user = User.query.get(session['user_id'])
             if user.role not in roles:
                 flash('У вас нет прав для доступа к этой странице', 'error')
@@ -241,6 +266,28 @@ def role_required(roles):
             return f(*args, **kwargs)
         return decorated_function
     return decorator
+
+@app.before_request
+def before_request():
+    """Middleware для синхронизации user_id в сессии с Flask-Login"""
+    try:
+        # Если пользователь аутентифицирован через Flask-Login, но нет user_id в сессии,
+        # обновляем сессию
+        if current_user.is_authenticated and ('user_id' not in session or session.get('user_id') != current_user.id):
+            session['user_id'] = current_user.id
+            session['role'] = current_user.role
+            session['username'] = current_user.username
+            debug_print(f"Синхронизирована сессия с Flask-Login: user_id={current_user.id}")
+        
+        # Если есть user_id в сессии, но пользователь не аутентифицирован через Flask-Login,
+        # пытаемся восстановить аутентификацию
+        elif 'user_id' in session and not current_user.is_authenticated:
+            user = User.query.get(session['user_id'])
+            if user:
+                login_user(user)
+                debug_print(f"Восстановлена аутентификация из сессии: user_id={user.id}")
+    except Exception as e:
+        debug_print(f"Ошибка синхронизации аутентификации: {str(e)}")
 
 # Маршруты
 @app.route('/')
@@ -290,12 +337,22 @@ def login():
             return redirect(url_for('login'))
         
         user = User.query.filter_by(username=username).first()
+        debug_print(f"Попытка входа пользователя: {username}")
         
         if user and user.check_password(password):
+            debug_print(f"Успешный вход. Роль пользователя: {user.role}")
+            
+            # Ensure user has a valid role
+            if not user.role:
+                user.role = 'user'
+                db.session.commit()
+                debug_print(f"Установлена роль по умолчанию для пользователя {user.username}")
+            
             login_user(user)  # Используем login_user из Flask-Login
             session['user_id'] = user.id
             session['role'] = user.role
             session['username'] = user.username
+            debug_print(f"Сессия установлена: user_id={session['user_id']}, role={session['role']}, username={session['username']}")
             flash('Вы успешно вошли в систему!', 'success')
             return redirect(url_for('index'))
         
@@ -315,6 +372,13 @@ def logout():
 @login_required
 def profile():
     user = User.query.get(session['user_id'])
+    debug_print(f"Профиль пользователя: id={user.id}, username={user.username}, role={user.role}")
+    
+    # Проверяем, что роль пользователя корректно установлена
+    if not user.role:
+        debug_print("Роль пользователя не установлена, устанавливаем значение по умолчанию")
+        user.role = 'user'
+        db.session.commit()
     
     # Получаем все результаты оценки пользователя
     assessment_results = AssessmentResult.query.filter_by(user_id=user.id).all()
@@ -332,8 +396,14 @@ def profile():
             block_id=block.id
         ).order_by(AssessmentResult.date.desc()).first()
         
-        score_percentage = (result.score / block.max_score * 100) if result else 0
-        normalized_scores[block.id] = score_percentage / 100  # Нормализованный score от 0 до 1
+        # Нормализуем оценку относительно максимального балла блока
+        if result:
+            normalized_score = min(1.0, result.score / block.max_score)
+            normalized_scores[block.id] = normalized_score
+            score_percentage = normalized_score * 100
+        else:
+            normalized_scores[block.id] = 0
+            score_percentage = 0
         
         block_results.append({
             'block': block,
@@ -344,18 +414,7 @@ def profile():
     # Рассчитываем итоговую оценку
     final_score_data = calculate_final_score(user.id)
     
-    # Проверяем и форматируем данные
-    if not isinstance(final_score_data, dict):
-        final_score_data = {
-            'final_score': 0,
-            'level': 5,
-            'normalized_scores': {}
-        }
-    
-    # Убеждаемся, что все необходимые поля присутствуют
-    final_score_data.setdefault('final_score', 0)
-    final_score_data.setdefault('level', 5)
-    final_score_data.setdefault('normalized_scores', {})
+    debug_print(f"Отображаемая роль пользователя: {user.role_display}")
     
     return render_template('profile.html',
                          user=user,
@@ -373,20 +432,18 @@ def manage_users():
 def update_user(user_id):
     user = User.query.get_or_404(user_id)
     new_role = request.form.get('role')
-    
-    # Проверяем, является ли это первым администратором
-    first_admin = User.query.filter_by(role='admin').order_by(User.id).first()
-    if user.id == first_admin.id:
-        flash('Нельзя изменить роль первого администратора', 'error')
-        return redirect(url_for('manage_users'))
-    
-    if new_role in ['user', 'expert', 'admin']:
+    if new_role in ['user', 'expert', 'admin', 'working_group']:
         user.role = new_role
         db.session.commit()
-        flash('Роль пользователя успешно обновлена', 'success')
+        
+        # Update session role if the user is updating their own role
+        if user_id == session.get('user_id'):
+            session['role'] = new_role
+            debug_print(f"Updated session role to {new_role} for user {user.username}")
+        
+        flash(f'Роль пользователя {user.username} обновлена на {new_role}', 'success')
     else:
-        flash('Некорректная роль', 'error')
-    
+        flash('Недопустимая роль', 'error')
     return redirect(url_for('manage_users'))
 
 @app.route('/delete_user/<int:user_id>', methods=['POST'])
@@ -927,25 +984,94 @@ def submit_assessment_block(block_id):
         try:
             answers = {}
             total_score = 0
+            has_answers = False
+            
             for question in questions:
                 if question.type == 'single':
                     answer = request.form.get(f'answer_{question.id}')
                     if answer is not None:
+                        has_answers = True
                         answers[str(question.id)] = int(answer)
                         if question.option_scores:
                             scores = json.loads(question.option_scores)
                             total_score += scores[int(answer)] * question.weight if question.weight else scores[int(answer)]
+                        else:
+                            # Если нет option_scores, даем баллы за любой ответ
+                            total_score += question.points * (question.weight if question.weight else 1)
+                            
+                elif question.type == 'multiple':
+                    selected_options = request.form.getlist(f'answer_{question.id}')
+                    if selected_options:
+                        has_answers = True
+                        answers[str(question.id)] = [int(opt) for opt in selected_options]
+                        # Обработка баллов для multiple choice
+                        if question.option_scores:
+                            scores = json.loads(question.option_scores)
+                            for opt in selected_options:
+                                total_score += scores[int(opt)] * question.weight if question.weight else scores[int(opt)]
+                        else:
+                            # Если нет option_scores, даем баллы за любой ответ
+                            total_score += question.points * (question.weight if question.weight else 1)
+                            
+                elif question.type == 'matching':
+                    matches = request.form.getlist(f'answer_{question.id}[]')
+                    if matches:
+                        has_answers = True
+                        answers[str(question.id)] = matches
+                        
+                        # Проверяем правильность сопоставлений
+                        correct_matches = question.get_correct_matches()
+                        if correct_matches:
+                            correct_count = sum(1 for i, m in enumerate(matches) if i < len(correct_matches) and m == correct_matches[i])
+                            score = (correct_count / len(correct_matches)) * question.points
+                            total_score += score * (question.weight if question.weight else 1)
+                        else:
+                            # Если нет correct_matches, даем баллы за любой ответ
+                            total_score += question.points * (question.weight if question.weight else 1)
+                            
+                elif question.type == 'code':
+                    code = request.form.get(f'answer_{question.id}')
+                    if code and code.strip():
+                        has_answers = True
+                        answers[str(question.id)] = code
+                        # Баллы за код будут выставлены экспертами позже
+                        # Временно даем небольшой балл за заполнение
+                        total_score += 1
+                        
                 elif question.type == 'expert_evaluation':
                     criteria = question.get_criteria()
                     question_scores = []
+                    all_criteria_answered = True
+                    
                     for i, criterion in enumerate(criteria):
-                        score = float(request.form.get(f'criterion_{question.id}_{i+1}'))
+                        score_str = request.form.get(f'criterion_{question.id}_{i+1}')
+                        if not score_str:
+                            all_criteria_answered = False
+                            break
+                        score = float(score_str)
                         question_scores.append(score)
-                    answers[str(question.id)] = question_scores
-                    avg_score = sum(question_scores) / len(question_scores)
-                    total_score += avg_score * question.weight if question.weight else avg_score
+                    
+                    if all_criteria_answered and question_scores:
+                        has_answers = True
+                        answers[str(question.id)] = question_scores
+                        avg_score = sum(question_scores) / len(question_scores)
+                        total_score += avg_score * question.weight if question.weight else avg_score
+                
+                # Для любых других типов вопросов
+                else:
+                    answer = request.form.get(f'answer_{question.id}')
+                    if answer and answer.strip():
+                        has_answers = True
+                        answers[str(question.id)] = answer
+                        # Даем баллы за заполнение
+                        total_score += question.points * (question.weight if question.weight else 1)
+            
+            if not has_answers:
+                flash('Пожалуйста, ответьте хотя бы на один вопрос', 'error')
+                return render_template('assessment_block.html', block=block, questions=questions)
+                
             result = AssessmentResult(
-                user_id=session['user_id'],
+                user_id=current_user.id,
                 block_id=block_id,
                 score=total_score,
                 answers=json.dumps(answers)
@@ -972,7 +1098,7 @@ def expert_code_evaluations():
             .join(AssessmentBlock)\
             .join(AssessmentQuestion)\
             .filter(AssessmentQuestion.type == 'code')\
-            .filter(AssessmentResult.user_id != session['user_id'])\
+            .filter(AssessmentResult.user_id != current_user.id)\
             .all()
         
         debug_print(f"Найдено результатов: {len(results)}")
@@ -998,7 +1124,7 @@ def expert_code_evaluations():
                             is_evaluated = ExpertCodeEvaluation.query.filter_by(
                                 assessment_result_id=result.id,
                                 question_id=question.id,
-                                expert_id=session['user_id']
+                                expert_id=current_user.id
                             ).first() is not None
                             debug_print(f"is_evaluated={is_evaluated}")
                             if not is_evaluated:
@@ -1028,7 +1154,7 @@ def evaluate_code(result_id, question_id):
     """Оценка кода пользователя"""
     # Проверяем, что эксперт не оценивает свой код
     result = AssessmentResult.query.get_or_404(result_id)
-    if result.user_id == session['user_id']:
+    if result.user_id == current_user.id:
         flash('Вы не можете оценивать свой код', 'error')
         return redirect(url_for('expert_code_evaluations'))
     
@@ -1064,7 +1190,7 @@ def evaluate_code(result_id, question_id):
     existing_evaluation = ExpertCodeEvaluation.query.filter_by(
         assessment_result_id=result_id,
         question_id=question_id,
-        expert_id=session['user_id']
+        expert_id=current_user.id
     ).first()
     
     # Получаем предыдущие оценки
@@ -1084,7 +1210,7 @@ def evaluate_code(result_id, question_id):
             evaluation = ExpertCodeEvaluation(
                 assessment_result_id=result_id,
                 question_id=question_id,
-                expert_id=session['user_id'],
+                expert_id=current_user.id,
                 score=score,
                 comments=comments
             )
@@ -1114,7 +1240,7 @@ def expert_text_evaluations():
             .join(AssessmentBlock)\
             .join(AssessmentQuestion)\
             .filter(AssessmentQuestion.type.in_(['open', 'single', 'multiple']))\
-            .filter(AssessmentResult.user_id != session['user_id'])\
+            .filter(AssessmentResult.user_id != current_user.id)\
             .all()
         
         # Группируем по блокам
@@ -1160,7 +1286,7 @@ def evaluate_text(result_id, question_id):
     """Оценка текстового ответа пользователя"""
     # Проверяем, что эксперт не оценивает свой ответ
     result = AssessmentResult.query.get_or_404(result_id)
-    if result.user_id == session['user_id']:
+    if result.user_id == current_user.id:
         flash('Вы не можете оценивать свои ответы', 'error')
         return redirect(url_for('expert_text_evaluations'))
     
@@ -1182,7 +1308,7 @@ def evaluate_text(result_id, question_id):
     existing_evaluation = ExpertCodeEvaluation.query.filter_by(
         assessment_result_id=result_id,
         question_id=question_id,
-        expert_id=session['user_id']
+        expert_id=current_user.id
     ).first()
     
     # Получаем предыдущие оценки
@@ -1202,7 +1328,7 @@ def evaluate_text(result_id, question_id):
             evaluation = ExpertCodeEvaluation(
                 assessment_result_id=result_id,
                 question_id=question_id,
-                expert_id=session['user_id'],
+                expert_id=current_user.id,
                 score=score,
                 comments=comments
             )
@@ -1325,84 +1451,44 @@ def calculate_final_score(user_id):
             block = blocks.get(result.block_id)
             if block:
                 # Нормализуем оценку относительно максимального балла блока
-                normalized_score = result.score / block.max_score
+                normalized_score = min(1.0, result.score / block.max_score)
                 normalized_scores[block.id] = normalized_score
                 
                 # Учитываем вес блока в итоговой оценке
                 weighted_sum += normalized_score * block.weight
                 total_weight += block.weight
         
-        # Рассчитываем итоговую оценку
-        final_score = (weighted_sum / total_weight * 100) if total_weight > 0 else 0
+        # Рассчитываем итоговую оценку (от 0 до 1)
+        final_score = (weighted_sum / total_weight) if total_weight > 0 else 0
         
-        # Рассчитываем воспроизводимость и конформизм на основе результатов оценки
-        reproducibility_score = 0
-        conformity_score = 0
-        
-        # Получаем результаты первого теста (Компетентность в сфере фронтенд-разработки)
-        frontend_block = AssessmentBlock.query.filter_by(
-            name='Компетентность в сфере фронтенд-разработки и основных языков'
-        ).first()
-        
-        if frontend_block:
-            frontend_result = AssessmentResult.query.filter_by(
-                user_id=user_id,
-                block_id=frontend_block.id
-            ).first()
-            
-            if frontend_result:
-                # Базовый результат из фронтенд теста
-                base_score = frontend_result.score / frontend_block.max_score
-                
-                # Добавляем случайное отклонение ±10%
-                import random
-                variation = random.uniform(-0.1, 0.1)
-                
-                # Рассчитываем воспроизводимость как 75% от результата первого теста с вариацией
-                reproducibility_score = min(100, max(0, (base_score * 0.75 + variation) * 100))
-                
-                # Рассчитываем конформизм как 50% от результата первого теста с вариацией
-                conformity_score = min(100, max(0, (base_score * 0.5 + variation) * 100))
-        
-        # Добавляем рассчитанные оценки в normalized_scores
-        reproducibility_block = AssessmentBlock.query.filter_by(name='Воспроизводимость').first()
-        conformity_block = AssessmentBlock.query.filter_by(name='Конформизм').first()
-        
-        
-        if reproducibility_block:
-            normalized_scores[reproducibility_block.id] = reproducibility_score / 100
-        
-        if conformity_block:
-            normalized_scores[conformity_block.id] = conformity_score / 100
-        
-        # Определяем уровень компетентности
-        if final_score >= 80:
-            level = 1  # Максимальная компетентность
-        elif final_score >= 60:
-            level = 2  # Высокая компетентность
-        elif final_score >= 40:
-            level = 3  # Компетентность выше средней
-        elif final_score >= 20:
-            level = 4  # Средняя компетентность
+        # Определяем уровень компетентности по новой шкале
+        if final_score == 0:
+            level = "Некомпетентен"
+        elif final_score <= 0.15:
+            level = "Некомпетентен"
+        elif final_score <= 0.4:
+            level = "Низкий уровень"
+        elif final_score <= 0.6:
+            level = "Средний уровень"
+        elif final_score <= 0.8:
+            level = "Выше среднего"
+        elif final_score < 1:
+            level = "Высокий уровень"
         else:
-            level = 5  # Низкая компетентность
+            level = "Максимальная компетентность"
         
         return {
-            'final_score': final_score,
+            'final_score': final_score * 100,  # Переводим в проценты для отображения
             'level': level,
-            'normalized_scores': normalized_scores,
-            'reproducibility_score': reproducibility_score,
-            'conformity_score': conformity_score
+            'normalized_scores': normalized_scores
         }
         
     except Exception as e:
         print(f"Ошибка при расчете итоговой оценки: {str(e)}")
         return {
             'final_score': 0,
-            'level': 5,
-            'normalized_scores': {},
-            'reproducibility_score': 0,
-            'conformity_score': 0
+            'level': "Некомпетентен",
+            'normalized_scores': {}
         }
 
 @app.route('/assessment_results')
@@ -1423,6 +1509,11 @@ def assessment_results():
         # Получаем результаты оценки для текущего пользователя
         assessment_results = AssessmentResult.query.filter_by(user_id=current_user.id).all()
         debug_print(f"Найдено результатов оценки: {len(assessment_results)}")
+        
+        # Если у пользователя нет результатов, показываем сообщение
+        if not assessment_results:
+            flash('У вас пока нет результатов оценки. Пройдите тесты в разделе "Прохождение оценки"', 'info')
+            return redirect(url_for('take_assessment'))
         
         # Получаем взаимооценки от других пользователей
         peer_evaluations = PeerEvaluation.query.filter_by(evaluated_id=current_user.id).all()
@@ -1760,7 +1851,7 @@ def init_assessment_blocks():
         # Create assessment blocks
         blocks = [
             {
-                'name': 'Компетентность в сфере фронтенд-разработки и основных языков',
+                'name': 'Компетентность в сфере фронтенд-разработки и основных языках',
                 'description': 'Оценка компетентности в сфере фронтенд-разработки и основных языков',
                 'max_score': 67,
                 'weight': 0.17
@@ -1800,6 +1891,12 @@ def init_assessment_blocks():
                 'description': 'Оценка собственных компетенций',
                 'max_score': 12.5,
                 'weight': 0.1
+            },
+            {
+                'name': 'Оценка рабочей группой',
+                'description': 'Блок для оценки экспертов рабочей группой, включающий опыт, заинтересованность и деловитость',
+                'max_score': 100,
+                'weight': 0.105
             }
         ]
         
@@ -1953,24 +2050,43 @@ def init_assessment_questions():
 @login_required
 def assessment_system():    
     try:
+        # Define excluded blocks
+        excluded_blocks = [
+            'Конформизм',
+            'Воспроизводимость',
+            'Оценка рабочей группой'
+        ]
+        
+        # Get all blocks except the excluded ones
         blocks = AssessmentBlock.query.filter(
-            ~AssessmentBlock.name.in_(['Воспроизводимость', 'Конформизм'])
+            ~AssessmentBlock.name.in_(excluded_blocks)
         ).all()
         
-        if not blocks:
-            flash('Нет доступных блоков оценки', 'warning')
-            return redirect(url_for('index'))
+        # For each block get current user's results and add useful information
+        for block in blocks:
+            result = AssessmentResult.query.filter_by(
+                user_id=session['user_id'],
+                block_id=block.id
+            ).order_by(AssessmentResult.date.desc()).first()
             
+            # Get average score for this block from all users
+            all_results = AssessmentResult.query.filter_by(block_id=block.id).all()
+            avg_score = sum(r.score for r in all_results) / len(all_results) if all_results else 0
+            
+            # Get number of users who completed this block
+            block.avg_score = result.score if result else None
+        
         # Получаем количество экспертов
         expert_count = User.query.filter_by(role='expert').count()
         
         # Если текущий пользователь эксперт, уменьшаем количество на 1
-        if current_user.role == 'expert':
+        if session.get('role') == 'expert':
             expert_count -= 1
         
         return render_template('assessment_system.html', blocks=blocks, expert_count=expert_count)
     except Exception as e:
-        print("Ошибка при загрузке блока assessment_system:", str(e))
+        debug_print(f"Ошибка при загрузке блока assessment_system: {str(e)}")
+        debug_print(f"Трейс ошибки:\n{traceback.format_exc()}")
         flash('Произошла ошибка при загрузке блока', 'error')
         return redirect(url_for('index'))
 
@@ -2102,6 +2218,10 @@ def init_db():
             if not create_expert_users():
                 debug_print("Ошибка при создании экспертов")
                 return False
+                
+            if not create_working_group_users():
+                debug_print("Ошибка при создании пользователей рабочей группы")
+                return False
             
             debug_print("Инициализируем блоки оценки...")
             if not init_assessment_blocks():
@@ -2139,6 +2259,43 @@ def create_expert_users():
         debug_print(f"Ошибка при создании экспертов: {str(e)}")
         return False
 
+def create_working_group_users():
+    """Создание пользователей рабочей группы"""
+    try:
+        working_group_users = [
+            {'username': 'Михайлов', 'password': 'group123'},
+            {'username': 'Андреев', 'password': 'group123'},
+            {'username': 'Николаев', 'password': 'group123'}
+        ]
+        
+        for user_data in working_group_users:
+            if not User.query.filter_by(username=user_data['username']).first():
+                user = User(username=user_data['username'], role='working_group')
+                user.set_password(user_data['password'])
+                db.session.add(user)
+                
+                # Создаем тестовые результаты оценки для каждого пользователя
+                blocks = AssessmentBlock.query.all()
+                for block in blocks:
+                    if block.name != 'Оценка рабочей группой':  # Пропускаем блок рабочей группы
+                        # Генерируем случайную оценку от 70 до 95
+                        score = random.uniform(70, 95)
+                        result = AssessmentResult(
+                            user_id=user.id,
+                            block_id=block.id,
+                            score=score,
+                            answers=json.dumps({'auto_generated': True})
+                        )
+                        db.session.add(result)
+        
+        db.session.commit()
+        debug_print('Пользователи рабочей группы успешно созданы!')
+        return True
+    except Exception as e:
+        db.session.rollback()
+        debug_print(f"Ошибка при создании пользователей рабочей группы: {str(e)}")
+        return False
+
 def load_blocks():
     blocks = []
     blocks_dir = os.path.join(os.path.dirname(__file__), 'blocks')
@@ -2154,6 +2311,158 @@ def load_blocks():
 def blocks():
     blocks = load_blocks()
     return render_template('blocks.html', blocks=blocks)
+
+@app.route('/working_group_experience')
+@login_required
+def working_group_experience():
+    block = None
+    with open('blocks/block8.json', 'r', encoding='utf-8') as f:
+        block_data = json.load(f)
+        for question in block_data['questions']:
+            if question['text'] == 'Опыт':
+                block = question
+                break
+    
+    if not block:
+        flash('Блок оценки опыта не найден', 'error')
+        return redirect(url_for('assessment_system'))
+    
+    return render_template('working_group_assessment.html', 
+                         title='Оценка опыта',
+                         block=block,
+                         assessment_type='experience')
+
+@app.route('/working_group_interest')
+@login_required
+def working_group_interest():
+    block = None
+    with open('blocks/block8.json', 'r', encoding='utf-8') as f:
+        block_data = json.load(f)
+        for question in block_data['questions']:
+            if question['text'] == 'Заинтересованность в работе экспертной комиссии':
+                block = question
+                break
+    
+    if not block:
+        flash('Блок оценки заинтересованности не найден', 'error')
+        return redirect(url_for('assessment_system'))
+    
+    return render_template('working_group_assessment.html', 
+                         title='Оценка заинтересованности',
+                         block=block,
+                         assessment_type='interest')
+
+@app.route('/working_group_evaluation')
+@role_required(['working_group'])
+def working_group_evaluation():
+    block = None
+    with open('blocks/block8.json', 'r', encoding='utf-8') as f:
+        block_data = json.load(f)
+        for question in block_data['questions']:
+            if question['text'] == 'Деловитость эксперта':
+                block = question
+                break
+    
+    if not block:
+        flash('Блок оценки деловитости не найден', 'error')
+        return redirect(url_for('assessment_system'))
+    
+    # Получаем список экспертов для оценки
+    experts = User.query.filter_by(role='expert').all()
+    
+    return render_template('working_group_evaluation.html', 
+                         title='Оценка деловитости',
+                         block=block,
+                         experts=experts)
+
+@app.route('/submit_working_group_assessment', methods=['POST'])
+@login_required
+def submit_working_group_assessment():
+    assessment_type = request.form.get('assessment_type')
+    scores = {}
+    
+    # Получаем данные из формы
+    for key, value in request.form.items():
+        if key.startswith('criteria_'):
+            scores[key.replace('criteria_', '')] = float(value)
+    
+    # Загружаем блок для получения весов
+    with open('blocks/block8.json', 'r', encoding='utf-8') as f:
+        block_data = json.load(f)
+        for question in block_data['questions']:
+            if (assessment_type == 'experience' and question['text'] == 'Опыт') or \
+               (assessment_type == 'interest' and question['text'] == 'Заинтересованность в работе экспертной комиссии'):
+                weight = question['weight']
+                max_score = question['max_score']
+                break
+    
+    # Вычисляем общий балл
+    total_score = sum(scores.values())
+    normalized_score = (total_score / max_score) * 100
+    
+    # Сохраняем результат
+    result = AssessmentResult(
+        user_id=session['user_id'],
+        block_id=8,  # ID блока рабочей группы
+        score=normalized_score * weight
+    )
+    db.session.add(result)
+    db.session.commit()
+    
+    flash(f'Оценка успешно сохранена. Ваш балл: {normalized_score:.2f}', 'success')
+    return redirect(url_for('assessment_system'))
+
+@app.route('/submit_working_group_evaluation', methods=['POST'])
+@role_required(['working_group'])
+def submit_working_group_evaluation():
+    expert_id = request.form.get('expert_id')
+    if not expert_id:
+        flash('Не указан эксперт для оценки', 'error')
+        return redirect(url_for('working_group_evaluation'))
+    
+    scores = {}
+    # Получаем данные из формы
+    for key, value in request.form.items():
+        if key.startswith('criteria_'):
+            scores[key.replace('criteria_', '')] = float(value)
+    
+    # Загружаем блок для получения весов
+    with open('blocks/block8.json', 'r', encoding='utf-8') as f:
+        block_data = json.load(f)
+        for question in block_data['questions']:
+            if question['text'] == 'Деловитость эксперта':
+                weight = question['weight']
+                max_score = question['max_score']
+                break
+    
+    # Вычисляем общий балл
+    total_score = sum(scores.values())
+    normalized_score = (total_score / max_score) * 100
+    
+    # Сохраняем оценку
+    evaluation = WorkGroupEvaluation(
+        evaluator_id=session['user_id'],
+        evaluated_id=expert_id,
+        criteria_scores=json.dumps(scores)
+    )
+    db.session.add(evaluation)
+    
+    # Проверяем согласованность оценок с помощью коэффициента конкордации Кенделла
+    all_evaluations = WorkGroupEvaluation.query.filter_by(evaluated_id=expert_id).all()
+    if len(all_evaluations) >= 3:  # Если есть хотя бы 3 оценки
+        rankings = []
+        for eval in all_evaluations:
+            eval_scores = json.loads(eval.criteria_scores)
+            rankings.append(list(eval_scores.values()))
+        
+        kendall_w = calculate_kendall_coefficient(rankings)
+        if kendall_w < 0.7:  # Если согласованность низкая
+            flash('Внимание: низкая согласованность оценок между экспертами (W < 0.7)', 'warning')
+    
+    db.session.commit()
+    
+    flash(f'Оценка эксперта успешно сохранена. Балл деловитости: {normalized_score:.2f}', 'success')
+    return redirect(url_for('working_group_evaluation'))
 
 if __name__ == '__main__':
     debug_print("Запуск приложения...")

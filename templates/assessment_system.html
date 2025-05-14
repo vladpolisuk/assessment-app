@@ -1,52 +1,121 @@
 {% extends "base.html" %}
 
+{% block styles %}
+<style>
+    /* Hide specific test cards */
+    .assessment-card[data-test-name="Конформизм"],
+    .assessment-card[data-test-name="Воспроизводимость"],
+    .assessment-card[data-test-name="Оценка рабочей группой"] {
+        display: none !important;
+    }
+    
+    /* Style for hiding action buttons */
+    .hide-action-buttons .action-buttons {
+        display: none !important;
+    }
+</style>
+
+{% if session.get('role') != 'working_group' %}
+<style>
+    .assessment-card[data-test-name="Оценка деловитости"] .action-buttons {
+        display: none !important;
+    }
+</style>
+{% endif %}
+{% endblock %}
+
+{% block title %}Система оценки компетентности{% endblock %}
+
 {% block content %}
-<div class="container mt-4">
-    <h2>Система оценки</h2>
+<div class="container">
+    <h2 class="mb-4">Система оценки компетентности</h2>
+    
+    <div class="alert alert-info" role="alert">
+        Система оценки позволяет определить уровень компетентности специалистов в различных областях.
+    </div>
     
     <div class="row">
         {% for block in blocks %}
-        <div class="col-md-4 mb-4">
-            <div class="card h-100">
+        <div class="col-md-6 mb-4">
+            <div class="card h-100 assessment-card" data-test-name="{{ block.name }}">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">{{ block.name }}</h5>
+                </div>
                 <div class="card-body">
-                    <h5 class="card-title">{{ block.name }}</h5>
                     <p class="card-text">{{ block.description }}</p>
-                    <p class="card-text">
-                        <small class="text-muted">
-                            {% if block.name == 'Взаимооценка' %}
-                                Максимальный балл: 100.0<br>
+                    {% if block.avg_score is not none %}
+                        <p class="text-success">Максимальный балл: {{ "%.1f"|format(block.avg_score) }}</p>
+                        {% if block.global_avg %}
+                            <p class="text-info">Средний балл по группе: {{ "%.1f"|format(block.global_avg) }}</p>
+                        {% endif %}
+                        {% if block.completed_count %}
+                            <p class="text-muted">Прошли оценку: {{ block.completed_count }} чел.</p>
+                        {% endif %}
+                    {% else %}
+                        <p class="text-warning">Вы еще не проходили оценку</p>
+                        {% if block.completed_count %}
+                            <p class="text-muted">Прошли оценку: {{ block.completed_count }} чел.</p>
+                        {% endif %}
+                    {% endif %}
+                    <div class="d-grid gap-2 col-6 mx-auto">
+                        <a href="{{ url_for('submit_assessment_block', block_id=block.id) }}" class="btn btn-primary">
+                            {% if block.avg_score is not none %}
+                                Пройти повторно
                             {% else %}
-                                Максимальный балл: {{ block.max_score }}<br>
-                                Количество вопросов: {{ block.questions|length }}
+                                Пройти оценку
                             {% endif %}
-                        </small>
-                    </p>
-                    <a href="{{ url_for('submit_assessment_block', block_id=block.id) }}" class="btn btn-primary">
-                        Пройти тест
-                    </a>
+                        </a>
+                    </div>
                 </div>
             </div>
         </div>
         {% endfor %}
     </div>
     
+    <!-- Блок "Оценка рабочей группой" -->
     <div class="card mt-4">
-        <div class="card-header bg-dark text-white">
-            <h5 class="card-title mb-0">Информация об оценке</h5>
+        <div class="card-header">
+            <h4>Оценка рабочей группой</h4>
         </div>
         <div class="card-body">
-            <h6>Как проходит оценка:</h6>
-            <ol>
-                <li>Выберите блок для оценки</li>
-                <li>Ответьте на все вопросы в блоке</li>
-                <li>После прохождения всех блоков вы получите итоговую оценку</li>
-                <li>Результаты можно будет посмотреть в профиле</li>
-            </ol>
-            <div class="alert alert-info">
-                <strong>Важно:</strong> Каждый блок имеет свой максимальный балл. 
-                Максимальный балл за все блоки - 100%.
+            <div class="row">
+                <div class="col-md-4">
+                    <div class="card">
+                        <div class="card-body">
+                            <h5 class="card-title">Оценка опыта</h5>
+                            <p class="card-text">Оценка профессионального опыта и квалификации экспертов.</p>
+                            <a href="{{ url_for('working_group_experience') }}" class="btn btn-primary">Начать оценку</a>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card">
+                        <div class="card-body">
+                            <h5 class="card-title">Оценка заинтересованности</h5>
+                            <p class="card-text">Оценка мотивации и стремления к развитию.</p>
+                            <a href="{{ url_for('working_group_interest') }}" class="btn btn-primary">Начать оценку</a>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card">
+                        <div class="card-body">
+                            <h5 class="card-title">Оценка деловитости</h5>
+                            <p class="card-text">Оценка профессиональных и личностных качеств.</p>
+                            {% if session.get('role') == 'working_group' %}
+                            <a href="{{ url_for('working_group_evaluation') }}" class="btn btn-primary">Начать оценку</a>
+                            {% else %}
+                            <p class="text-muted small">Доступно только для рабочей группы</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
+    </div>
+    
+    <div class="alert alert-primary mt-3" role="alert">
+        <strong>Количество экспертов в системе:</strong> {{ expert_count }}
     </div>
 </div>
 {% endblock %} 
