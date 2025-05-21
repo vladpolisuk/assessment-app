@@ -1,6 +1,19 @@
-from flask import render_template
+from flask import render_template, flash, redirect, url_for, session, Flask
 from flask_login import login_required, current_user
-from app.models import Assessment
+from models import AssessmentResult, AssessmentBlock, User
+import traceback
+
+# Define app and db
+from models import db
+
+# Create Flask application
+app = Flask(__name__)
+app.config['SECRET_KEY'] = 'your-secret-key-123'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///quiz.db'
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+
+# Initialize the database with app
+db.init_app(app)
 
 # Добавляем функцию sum в контекст шаблона
 def sum_iterable(iterable):
@@ -10,7 +23,7 @@ def sum_iterable(iterable):
 @login_required
 def assessment_results():
     # Получаем все оценки пользователя
-    assessments = Assessment.query.filter_by(user_id=current_user.id).all()
+    assessments = AssessmentResult.query.filter_by(user_id=current_user.id).all()
     
     # Подготавливаем данные для графиков
     block_names = []
@@ -39,7 +52,7 @@ def assessment_results():
 @login_required
 def profile():
     # Получаем все оценки пользователя
-    assessments = Assessment.query.filter_by(user_id=current_user.id).all()
+    assessments = AssessmentResult.query.filter_by(user_id=current_user.id).all()
     
     # Вычисляем итоговую оценку
     final_score = 0
@@ -118,13 +131,13 @@ def assessment_stats():
             block_results = [r for r in results if r.block_id == block.id]
             if block_results:
                 scores = [r.score for r in block_results]
-            block_stats[block.id] = {
-                    'name': block.name,
-                    'avg_score': sum(scores) / len(scores),
-                    'max_score': max(scores),
-                    'min_score': min(scores),
-                    'count': len(scores)
-            }
+                block_stats[block.id] = {
+                        'name': block.name,
+                        'avg_score': sum(scores) / len(scores),
+                        'max_score': max(scores),
+                        'min_score': min(scores),
+                        'count': len(scores)
+                }
         
         # Подготавливаем данные для графиков
         score_ranges = ['0-20', '21-40', '41-60', '61-80', '81-100']
@@ -146,25 +159,25 @@ def assessment_stats():
         # Подготавливаем данные для графика средних оценок по блокам
         block_names = [block.name for block in blocks]
         avg_scores = []
-    for block in blocks:
+        for block in blocks:
             block_results = [r for r in results if r.block_id == block.id]
             if block_results:
                 avg_score = sum(r.score for r in block_results) / len(block_results)
                 avg_scores.append(avg_score)
             else:
                 avg_scores.append(0)
-    
-    return render_template('assessment_stats.html',
-                         blocks=blocks,
-                         block_stats=block_stats,
-                         score_ranges=score_ranges,
-                         score_counts=score_counts,
-                         block_names=block_names,
-                         avg_scores=avg_scores) 
+        
+        return render_template('assessment_stats.html',
+                             blocks=blocks,
+                             block_stats=block_stats,
+                             score_ranges=score_ranges,
+                             score_counts=score_counts,
+                             block_names=block_names,
+                             avg_scores=avg_scores)
     except Exception as e:
         print("Ошибка при загрузке статистики:", e)
         flash('Произошла ошибка при загрузке статистики', 'error')
-        return redirect(url_for('index')) 
+        return redirect(url_for('index'))
 
 @app.route('/assessment_system')
 @login_required

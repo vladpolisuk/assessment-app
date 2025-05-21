@@ -1,6 +1,5 @@
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask import Flask, render_template, request, redirect, url_for, session, flash, jsonify
-from flask_sqlalchemy import SQLAlchemy
 from functools import wraps
 import json
 from datetime import datetime
@@ -17,6 +16,10 @@ import time
 import random
 from collections import defaultdict
 
+# Импортируем модели из models.py
+from models import db, User, AssessmentBlock, AssessmentQuestion, AssessmentResult, PeerEvaluation
+from models import WorkGroupEvaluation, ExpertCodeEvaluation, ExpertAnswerHistory
+
 # Initialize Flask app
 app = Flask(__name__)
 
@@ -32,7 +35,7 @@ for directory in [app.config['UPLOAD_FOLDER'], 'blocks']:
         os.makedirs(directory)
 
 # Initialize database
-db = SQLAlchemy(app)
+db.init_app(app)
 
 # Initialize login manager
 login_manager = LoginManager()
@@ -42,7 +45,7 @@ login_manager.login_view = 'login'
 # Configure logging
 @login_manager.user_loader
 def load_user(user_id):
-    return User.query.get(int(user_id))
+    return db.session.get(User, int(user_id))
 
 # Настройка логирования
 logging.basicConfig(level=logging.DEBUG)
@@ -78,158 +81,6 @@ except Exception as e:
     print(f"Критическая ошибка при инициализации приложения: {str(e)}", file=sys.stderr)
     exit(1)
 
-# Модели
-class User(UserMixin, db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    username = db.Column(db.String(80), unique=True, nullable=False)
-    password = db.Column(db.String(120), nullable=False)
-    role = db.Column(db.String(20), default='user')
-
-    def set_password(self, password):
-        self.password = generate_password_hash(password)
-
-    def check_password(self, password):
-        return check_password_hash(self.password, password)
-
-    @property
-    def role_display(self):
-        debug_print(f"Определение роли для пользователя {self.username}. Текущая роль: {self.role}")
-        roles = {
-            'user': 'Пользователь',
-            'expert': 'Эксперт',
-            'admin': 'Администратор',
-            'working_group': 'Рабочая группа'
-        }
-        display_role = roles.get(self.role, 'Пользователь')
-        debug_print(f"Отображаемая роль: {display_role}")
-        return display_role
-
-class AssessmentBlock(db.Model):
-    __tablename__ = 'assessment_block'
-    id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(100), nullable=False)
-    description = db.Column(db.Text)
-    weight = db.Column(db.Float, default=1.0)  # Добавляем поле weight
-    max_score = db.Column(db.Float, default=10.0)  # Добавляем поле max_score
-    questions = db.relationship('AssessmentQuestion', back_populates='block', lazy=True)
-
-class AssessmentQuestion(db.Model):
-    __tablename__ = 'assessment_question'
-    id = db.Column(db.Integer, primary_key=True)
-    block_id = db.Column(db.Integer, db.ForeignKey('assessment_block.id'), nullable=False)
-    text = db.Column(db.Text, nullable=False)
-    type = db.Column(db.String(20), nullable=False)  # 'multiple_choice', 'open_ended', 'code', 'matching', 'expert_evaluation'
-    options = db.Column(db.Text)  # JSON для вариантов ответов
-    correct_answer = db.Column(db.Text)  # JSON для правильного ответа
-    points = db.Column(db.Integer, default=1)
-    code_template = db.Column(db.Text)  # Шаблон кода для вопросов типа 'code'
-    test_cases = db.Column(db.Text)  # JSON для тестовых случаев
-    example_solutions = db.Column(db.Text)  # JSON для примеров успешных решений
-    block = db.relationship('AssessmentBlock', foreign_keys=[block_id])
-    option_scores = db.Column(db.Text)  # JSON для баллов по вариантам
-    description = db.Column(db.Text)  # Описание для вопросов типа 'expert_evaluation'
-    criteria = db.Column(db.Text)  # JSON для критериев оценки
-    max_score = db.Column(db.Float)  # Максимальный балл для экспертной оценки
-    weight = db.Column(db.Float)  # Вес вопроса в блоке
-
-    def get_definitions(self):
-        """Получить список определений для matching-вопроса"""
-        if self.type == 'matching':
-            try:
-                data = json.loads(self.options)
-                if isinstance(data, dict):
-                    return data.get('definitions', [])
-                elif isinstance(data, list):
-                    return data
-                return []
-            except (json.JSONDecodeError, TypeError):
-                return []
-        return []
-
-    def get_criteria(self):
-        """Получить список критериев для экспертной оценки"""
-        if self.type == 'expert_evaluation':
-            try:
-                return json.loads(self.criteria)
-            except (json.JSONDecodeError, TypeError):
-                return []
-        return []
-
-    def get_terms(self):
-        """Получить список терминов для matching-вопроса"""
-        if self.type == 'matching':
-            try:
-                data = json.loads(self.options)
-                if isinstance(data, dict):
-                    return data.get('options', [])
-                elif isinstance(data, list):
-                    return data
-                return []
-            except (json.JSONDecodeError, TypeError):
-                return []
-        return []
-
-    def get_correct_matches(self):
-        """Получить правильные соответствия для matching-вопроса"""
-        if self.type == 'matching':
-            try:
-                return json.loads(self.correct_answer)
-            except (json.JSONDecodeError, TypeError):
-                return []
-        return []
-
-class AssessmentResult(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-    block_id = db.Column(db.Integer, db.ForeignKey('assessment_block.id'), nullable=False)
-    score = db.Column(db.Float, nullable=False)
-    date = db.Column(db.DateTime, default=datetime.utcnow)
-    answers = db.Column(db.String(5000))  # JSON string storing user's answers
-    
-    # Определяем связи
-    block = db.relationship('AssessmentBlock', backref='results')
-    user = db.relationship('User', backref='assessment_results')
-
-class PeerEvaluation(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    evaluator_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-    evaluated_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-    score = db.Column(db.Float, nullable=False)
-    date = db.Column(db.DateTime, default=datetime.utcnow)
-
-class WorkGroupEvaluation(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    evaluator_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-    evaluated_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-    criteria_scores = db.Column(db.String(1000))  # JSON string storing scores for each criterion
-    date = db.Column(db.DateTime, default=datetime.utcnow)
-
-class ExpertCodeEvaluation(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    assessment_result_id = db.Column(db.Integer, db.ForeignKey('assessment_result.id'), nullable=False)
-    question_id = db.Column(db.Integer, db.ForeignKey('assessment_question.id'), nullable=False)
-    expert_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-    score = db.Column(db.Float, nullable=False)
-    comments = db.Column(db.String(1000))
-    date = db.Column(db.DateTime, default=datetime.utcnow)
-    
-    # Relationships
-    assessment_result = db.relationship('AssessmentResult', backref='expert_evaluations')
-    question = db.relationship('AssessmentQuestion')
-    expert = db.relationship('User')
-
-class ExpertAnswerHistory(db.Model):
-    """Модель для хранения истории ответов экспертов"""
-    id = db.Column(db.Integer, primary_key=True)
-    question_id = db.Column(db.Integer, db.ForeignKey('assessment_question.id'), nullable=False)
-    expert_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-    answer = db.Column(db.Text, nullable=False)
-    date = db.Column(db.DateTime, default=datetime.utcnow)
-    
-    # Связи
-    question = db.relationship('AssessmentQuestion')
-    expert = db.relationship('User')
-
 # Декораторы
 def login_required(f):
     @wraps(f)
@@ -243,7 +94,7 @@ def login_required(f):
 def sync_session_role():
     """Synchronize the session role with the database role"""
     if 'user_id' in session:
-        user = User.query.get(session['user_id'])
+        user = db.session.get(User, session['user_id'])
         if user and session.get('role') != user.role:
             session['role'] = user.role
             debug_print(f"Synchronized session role to {user.role} for user {user.username}")
@@ -259,10 +110,21 @@ def role_required(roles):
             # Sync session role with database role
             sync_session_role()
             
-            user = User.query.get(session['user_id'])
+            user = db.session.get(User, session['user_id'])
+            if not user:
+                flash('Пользователь не найден', 'error')
+                return redirect(url_for('logout'))
+            
+            debug_print(f"Проверка доступа: пользователь {user.username}, роль {user.role}, требуемые роли {roles}")
+            
+            # Обновляем роль пользователя в сессии
+            session['role'] = user.role
+            
             if user.role not in roles:
-                flash('У вас нет прав для доступа к этой странице', 'error')
+                flash(f'У вас нет прав для доступа к этой странице. Ваша роль: {user.role}, требуется одна из: {", ".join(roles)}', 'error')
                 return redirect(url_for('index'))
+            
+            debug_print(f"Доступ разрешен для пользователя {user.username} с ролью {user.role}")
             return f(*args, **kwargs)
         return decorated_function
     return decorator
@@ -282,7 +144,7 @@ def before_request():
         # Если есть user_id в сессии, но пользователь не аутентифицирован через Flask-Login,
         # пытаемся восстановить аутентификацию
         elif 'user_id' in session and not current_user.is_authenticated:
-            user = User.query.get(session['user_id'])
+            user = db.session.get(User, session['user_id'])
             if user:
                 login_user(user)
                 debug_print(f"Восстановлена аутентификация из сессии: user_id={user.id}")
@@ -371,7 +233,7 @@ def logout():
 @app.route('/profile')
 @login_required
 def profile():
-    user = User.query.get(session['user_id'])
+    user = db.session.get(User, session['user_id'])
     debug_print(f"Профиль пользователя: id={user.id}, username={user.username}, role={user.role}")
     
     # Проверяем, что роль пользователя корректно установлена
@@ -430,7 +292,7 @@ def manage_users():
 @app.route('/update_user/<int:user_id>', methods=['POST'])
 @role_required(['admin'])
 def update_user(user_id):
-    user = User.query.get_or_404(user_id)
+    user = db.session.get_or_404(User, user_id)
     new_role = request.form.get('role')
     if new_role in ['user', 'expert', 'admin', 'working_group']:
         user.role = new_role
@@ -453,7 +315,7 @@ def delete_user(user_id):
         flash('Вы не можете удалить себя', 'error')
         return redirect(url_for('manage_users'))
     
-    user = User.query.get_or_404(user_id)
+    user = db.session.get_or_404(User, user_id)
     db.session.delete(user)
     db.session.commit()
     flash('Пользователь успешно удален', 'success')
@@ -692,7 +554,7 @@ def results():
 @app.route('/admin/change_password/<int:user_id>', methods=['POST'])
 @role_required(['admin'])
 def admin_change_password(user_id):
-    user = User.query.get_or_404(user_id)
+    user = db.session.get_or_404(User, user_id)
     new_password = request.form['new_password']
     confirm_password = request.form['confirm_password']
     
@@ -1450,6 +1312,37 @@ def calculate_final_score(user_id):
         for result in assessment_results:
             block = blocks.get(result.block_id)
             if block:
+                # Обновляем оценку результата, учитывая все вопросы в блоке
+                questions = AssessmentQuestion.query.filter_by(block_id=block.id).all()
+                
+                if result.answers:
+                    try:
+                        answers = json.loads(result.answers)
+                        total_score = 0
+                        max_possible_score = 0
+                        
+                        for question in questions:
+                            max_score = question.points * (question.weight if question.weight else 1)
+                            max_possible_score += max_score
+                            
+                            # Для вопросов с кодом учитываем оценки экспертов
+                            if question.type == 'code':
+                                expert_evaluations = ExpertCodeEvaluation.query.filter_by(
+                                    assessment_result_id=result.id,
+                                    question_id=question.id
+                                ).all()
+                                
+                                if expert_evaluations:
+                                    avg_score = sum(eval.score for eval in expert_evaluations) / len(expert_evaluations)
+                                    total_score += (avg_score / question.points) * max_score
+                        
+                        # Сохраняем обновленную оценку
+                        if max_possible_score > 0:
+                            result.score = total_score
+                            db.session.commit()
+                    except json.JSONDecodeError:
+                        pass
+                
                 # Нормализуем оценку относительно максимального балла блока
                 normalized_score = min(1.0, result.score / block.max_score)
                 normalized_scores[block.id] = normalized_score
@@ -1579,7 +1472,7 @@ def assessment_results():
                                 
                                 if expert_evaluations:
                                     avg_score = sum(eval.score for eval in expert_evaluations) / len(expert_evaluations)
-                                    score = (avg_score / 10) * max_score  # Нормализуем до максимального балла вопроса
+                                    score = (avg_score / question.points) * max_score  # Нормализуем до максимального балла вопроса с учетом веса
                             
                             elif question.type == 'expert_evaluation':
                                 # Для экспертной оценки используем средний балл
@@ -1634,7 +1527,8 @@ def assessment_results():
         return render_template('assessment_results.html',
                              assessment_data=assessment_data,
                              peer_score=peer_score,
-                             final_score=final_score_data)
+                             final_score=final_score_data,
+                             user=current_user)
                              
     except Exception as e:
         debug_print(f"Критическая ошибка при обработке результатов: {str(e)}")
@@ -1851,9 +1745,9 @@ def init_assessment_blocks():
         # Create assessment blocks
         blocks = [
             {
-                'name': 'Компетентность в сфере фронтенд-разработки и основных языках',
-                'description': 'Оценка компетентности в сфере фронтенд-разработки и основных языков',
-                'max_score': 67,
+                'name': 'Компетентность в сфере Java-разработки',
+                'description': 'Оценка компетентности в сфере Java-разработки',
+                'max_score': 56,
                 'weight': 0.17
             },
             {
@@ -1897,6 +1791,12 @@ def init_assessment_blocks():
                 'description': 'Блок для оценки экспертов рабочей группой, включающий опыт, заинтересованность и деловитость',
                 'max_score': 100,
                 'weight': 0.105
+            },
+            {
+                'name': 'Компетентность в сфере Java-разработки и основных языков',
+                'description': 'Оценка компетентности в сфере Java-разработки и основных языков',
+                'max_score': 35,
+                'weight': 0.17
             }
         ]
         
@@ -2246,13 +2146,30 @@ def create_expert_users():
     """Создание пользователей-экспертов"""
     try:
         expert_names = ['Иванов', 'Петров', 'Сидоров', 'Смирнов', 'Кузнецов']
+        created_count = 0
+        
         for name in expert_names:
-            if not User.query.filter_by(username=name).first():
+            existing_user = User.query.filter_by(username=name).first()
+            if existing_user:
+                debug_print(f"Эксперт {name} уже существует с ролью {existing_user.role}")
+                # Обновляем роль, если она отличается от 'expert'
+                if existing_user.role != 'expert':
+                    existing_user.role = 'expert'
+                    debug_print(f"Обновлена роль пользователя {name} на 'expert'")
+            else:
                 user = User(username=name, role='expert')
                 user.set_password(name)
                 db.session.add(user)
+                created_count += 1
+                debug_print(f"Создан новый эксперт: {name}")
+        
         db.session.commit()
-        debug_print('Эксперты успешно созданы!')
+        debug_print(f'Эксперты успешно созданы! Создано: {created_count}, всего: {len(expert_names)}')
+        
+        # Проверяем, что эксперты корректно созданы
+        expert_count = User.query.filter_by(role='expert').count()
+        debug_print(f'Всего пользователей с ролью эксперта в базе: {expert_count}')
+        
         return True
     except Exception as e:
         db.session.rollback()
@@ -2474,17 +2391,7 @@ if __name__ == '__main__':
         
         debug_print("База данных инициализирована успешно")
         
-        # Load test data if available
-        try:
-            test_data_script = os.path.join(os.path.dirname(__file__), 'test_data_filler', 'fill_test_data.py')
-            if os.path.exists(test_data_script):
-                debug_print("Запускаем скрипт заполнения тестовыми данными...")
-                subprocess.run([sys.executable, test_data_script], check=True)
-                debug_print("Тестовые данные успешно добавлены!")
-            else:
-                debug_print("Скрипт заполнения тестовыми данными не найден.")
-        except Exception as e:
-            debug_print(f"Ошибка при запуске скрипта заполнения тестовыми данными: {str(e)}")
+        # Removed the test data loading code as requested
         
         app.run(debug=True)
     except Exception as e:

@@ -1,41 +1,5 @@
 <footer class="footer mt-auto py-3 bg-light">
     <div class="container">
-        <div class="row">
-            <div class="col-md-4">
-                <h5>Навигация</h5>
-                <ul class="list-unstyled">
-                    <li><a href="{{ url_for('index') }}" class="text-decoration-none">Главная</a></li>
-                    <li><a href="{{ url_for('assessment_system') }}" class="text-decoration-none">Система оценки</a></li>
-                    {% if session.get('user_id') %}
-                        <li><a href="{{ url_for('profile') }}" class="text-decoration-none">Профиль</a></li>
-                    {% endif %}
-                </ul>
-            </div>
-            <div class="col-md-4">
-                <h5>Полезные ссылки</h5>
-                <ul class="list-unstyled">
-                    {% if session.get('role') in ['expert', 'admin'] %}
-                        <li><a href="{{ url_for('expert_code_evaluations') }}" class="text-decoration-none">Оценка кода</a></li>
-                        <li><a href="{{ url_for('assessment_stats') }}" class="text-decoration-none">Статистика</a></li>
-                    {% endif %}
-                    <li><a href="#" class="text-decoration-none">Документация</a></li>
-                    <li><a href="#" class="text-decoration-none">Помощь</a></li>
-                </ul>
-            </div>
-            <div class="col-md-4">
-                <h5>Контакты</h5>
-                <ul class="list-unstyled">
-                    <li>Email: support@example.com</li>
-                    <li>Телефон: +7 (999) 123-45-67</li>
-                    <li class="mt-2">
-                        <a href="#" class="text-decoration-none me-2"><i class="bi bi-telegram"></i></a>
-                        <a href="#" class="text-decoration-none me-2"><i class="bi bi-whatsapp"></i></a>
-                        <a href="#" class="text-decoration-none"><i class="bi bi-envelope"></i></a>
-                    </li>
-                </ul>
-            </div>
-        </div>
-        <hr>
         <div class="text-center">
             <p class="mb-0">&copy; 2025 Система оценки компетенций. Все права защищены.</p>
         </div>

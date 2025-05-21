@@ -19,7 +19,10 @@ AssessmentResult = models.AssessmentResult
 # --- Конфигурация ---
 USER = {'username': 'Миша', 'password': 'Миша', 'role': 'user'}
 
-
+BLOCK = {
+    'name': 'Базовое программирование',
+    'description': 'Блок для проверки основных навыков программирования'
+}
 
 QUESTION = {
     'type': 'code',

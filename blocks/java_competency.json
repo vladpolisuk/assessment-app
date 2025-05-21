@@ -1,0 +1,73 @@
+{
+    "name": "Компетентность в сфере Java-разработки и основных языков",
+    "description": "Оценка знаний и навыков в области Java-разработки, включая многопоточность, коллекции и работу с основными библиотеками",
+    "questions": [
+        {
+            "text": "Напишите метод на Java, который находит все дубликаты в массиве чисел и возвращает новый список с уникальными дублирующимися значениями.",
+            "type": "code",
+            "points": 10,
+            "test_cases": [
+                {
+                    "input": "[1, 2, 3, 2, 4, 5, 4, 6]",
+                    "expected": "[2, 4]",
+                    "description": "Базовый тест с двумя дубликатами"
+                },
+                {
+                    "input": "[1, 1, 1, 2, 2, 3]",
+                    "expected": "[1, 2]",
+                    "description": "Тест с множественными дубликатами"
+                },
+                {
+                    "input": "[1, 2, 3, 4, 5]",
+                    "expected": "[]",
+                    "description": "Тест без дубликатов"
+                }
+            ],
+            "example_solutions": [
+                "public List<Integer> findDuplicates(int[] arr) {\n    Map<Integer, Integer> countMap = new HashMap<>();\n    List<Integer> duplicates = new ArrayList<>();\n    \n    for (int num : arr) {\n        countMap.put(num, countMap.getOrDefault(num, 0) + 1);\n        if (countMap.get(num) == 2) {\n            duplicates.add(num);\n        }\n    }\n    \n    return duplicates;\n}",
+                "public List<Integer> findDuplicates(int[] arr) {\n    Set<Integer> uniques = new HashSet<>();\n    Set<Integer> duplicates = new HashSet<>();\n    \n    for (int num : arr) {\n        if (!uniques.add(num)) {\n            duplicates.add(num);\n        }\n    }\n    \n    return new ArrayList<>(duplicates);\n}"
+            ]
+        },
+        {
+            "text": "Реализуйте класс ThreadSafeCounter на Java, который позволяет инкрементировать и получать значение счетчика из нескольких потоков безопасным образом.",
+            "type": "code",
+            "points": 15,
+            "test_cases": [
+                {
+                    "input": "Инкремент счетчика из 5 потоков по 1000 раз каждый",
+                    "expected": "Значение счетчика должно быть равно 5000",
+                    "description": "Проверка потокобезопасности инкрементирования"
+                },
+                {
+                    "input": "Получение значения счетчика из разных потоков",
+                    "expected": "Все потоки должны получить одинаковое значение",
+                    "description": "Проверка отметки выполнения"
+                }
+            ],
+            "example_solutions": [
+                "public class ThreadSafeCounter {\n    private AtomicInteger counter = new AtomicInteger(0);\n    \n    public void increment() {\n        counter.incrementAndGet();\n    }\n    \n    public int getValue() {\n        return counter.get();\n    }\n}",
+                "public class ThreadSafeCounter {\n    private volatile int counter = 0;\n    \n    public synchronized void increment() {\n        counter++;\n    }\n    \n    public int getValue() {\n        return counter;\n    }\n}"
+            ]
+        },
+        {
+            "text": "Напишите класс на Java, реализующий кэш с ограниченным временем жизни элементов. Кэш должен автоматически удалять элементы, время жизни которых истекло.",
+            "type": "code",
+            "points": 10,
+            "test_cases": [
+                {
+                    "input": "Добавление элемента с TTL 100ms и запрос через 150ms",
+                    "expected": "Элемент должен быть удален из кэша",
+                    "description": "Проверка удаления устаревших элементов"
+                },
+                {
+                    "input": "Добавление элемента с TTL 500ms и запрос через 100ms",
+                    "expected": "Элемент должен быть доступен в кэше",
+                    "description": "Проверка доступности актуальных элементов"
+                }
+            ],
+            "example_solutions": [
+                "public class TimedCache<K, V> {\n    private class CacheEntry {\n        private final V value;\n        private final long expiryTime;\n        \n        public CacheEntry(V value, long ttlMillis) {\n            this.value = value;\n            this.expiryTime = System.currentTimeMillis() + ttlMillis;\n        }\n        \n        public boolean isExpired() {\n            return System.currentTimeMillis() > expiryTime;\n        }\n        \n        public V getValue() {\n            return value;\n        }\n    }\n    \n    private final Map<K, CacheEntry> cache = new ConcurrentHashMap<>();\n    private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);\n    \n    public TimedCache() {\n        // Запуск периодической очистки устаревших элементов\n        scheduler.scheduleAtFixedRate(this::removeExpiredItems, 0, 100, TimeUnit.MILLISECONDS);\n    }\n    \n    public void put(K key, V value, long ttlMillis) {\n        cache.put(key, new CacheEntry(value, ttlMillis));\n    }\n    \n    public V get(K key) {\n        CacheEntry entry = cache.get(key);\n        if (entry != null && !entry.isExpired()) {\n            return entry.getValue();\n        } else {\n            cache.remove(key);\n            return null;\n        }\n    }\n    \n    private void removeExpiredItems() {\n        cache.entrySet().removeIf(entry -> entry.getValue().isExpired());\n    }\n    \n    public void shutdown() {\n        scheduler.shutdown();\n    }\n}"
+            ]
+        }
+    ]
+} 
