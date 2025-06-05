@@ -6,21 +6,21 @@ from datetime import datetime
 import importlib.util
 import string
 
-# Add the parent directory to sys.path so Python can find the modules
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-sys.path.insert(0, BASE_DIR)
-
-# Import directly after adding to path
-from models import db, User, AssessmentBlock, AssessmentQuestion, AssessmentResult, PeerEvaluation, ExpertCodeEvaluation
-
 # Динамически импортируем основной модуль приложения (1.py)
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 main_path = os.path.join(BASE_DIR, '1.py')
 spec = importlib.util.spec_from_file_location('main_app', main_path)
 main_app = importlib.util.module_from_spec(spec)
 sys.modules['main_app'] = main_app
 spec.loader.exec_module(main_app)
 
-# Use the main_app's app instance
+db = main_app.db
+User = main_app.User
+AssessmentBlock = main_app.AssessmentBlock
+AssessmentQuestion = main_app.AssessmentQuestion
+AssessmentResult = main_app.AssessmentResult
+PeerEvaluation = main_app.PeerEvaluation
+ExpertCodeEvaluation = main_app.ExpertCodeEvaluation
 app = main_app.app
 
 # Расширенный список имен для генерации пользователей
@@ -164,19 +164,10 @@ def fill_test_data():
                             evaluated_id=other.id
                         ).first()
                         if not existing_peer:
-                            # Создаем словарь с критериями оценки
-                            criteria = {
-                                "опыт": random.randint(5, 10),
-                                "знания": random.randint(5, 10),
-                                "коммуникабельность": random.randint(5, 10),
-                                "эффективность": random.randint(5, 10)
-                            }
-                            
                             evaluation = PeerEvaluation(
                                 evaluator_id=user.id,
                                 evaluated_id=other.id,
-                                score=score,
-                                criteria_scores=json.dumps(criteria)  # Добавляем критерии оценки
+                                score=score
                             )
                             db.session.add(evaluation)
                     

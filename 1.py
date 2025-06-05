@@ -1527,8 +1527,7 @@ def assessment_results():
         return render_template('assessment_results.html',
                              assessment_data=assessment_data,
                              peer_score=peer_score,
-                             final_score=final_score_data,
-                             user=current_user)
+                             final_score=final_score_data)
                              
     except Exception as e:
         debug_print(f"Критическая ошибка при обработке результатов: {str(e)}")
@@ -2391,7 +2390,17 @@ if __name__ == '__main__':
         
         debug_print("База данных инициализирована успешно")
         
-        # Removed the test data loading code as requested
+        # Load test data if available
+        try:
+            test_data_script = os.path.join(os.path.dirname(__file__), 'test_data_filler', 'fill_test_data.py')
+            if os.path.exists(test_data_script):
+                debug_print("Запускаем скрипт заполнения тестовыми данными...")
+                subprocess.run([sys.executable, test_data_script], check=True)
+                debug_print("Тестовые данные успешно добавлены!")
+            else:
+                debug_print("Скрипт заполнения тестовыми данными не найден.")
+        except Exception as e:
+            debug_print(f"Ошибка при запуске скрипта заполнения тестовыми данными: {str(e)}")
         
         app.run(debug=True)
     except Exception as e:

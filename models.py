@@ -58,27 +58,6 @@ class AssessmentQuestion(db.Model):
     max_score = db.Column(db.Float)
     weight = db.Column(db.Float)
 
-    @property
-    def options_list(self):
-        """Возвращает список опций из JSON строки"""
-        if not self.options:
-            return []
-        try:
-            return json.loads(self.options)
-        except json.JSONDecodeError:
-            return []
-
-    @property
-    def correct_answers_list(self):
-        """Возвращает список правильных ответов из JSON строки"""
-        if not self.correct_answer:
-            return []
-        try:
-            return json.loads(self.correct_answer)
-        except json.JSONDecodeError:
-            # В случае, если correct_answer хранится как строка
-            return [self.correct_answer]
-
 class AssessmentResult(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
@@ -89,19 +68,6 @@ class AssessmentResult(db.Model):
     
     block = db.relationship('AssessmentBlock', backref='results')
     user = db.relationship('User', backref='assessment_results')
-
-    def get_answers_dict(self):
-        """Получает словарь ответов из JSON строки"""
-        if not self.answers:
-            return {}
-        try:
-            return json.loads(self.answers)
-        except json.JSONDecodeError:
-            return {}
-
-    def set_answers_dict(self, answers_dict):
-        """Устанавливает ответы из словаря"""
-        self.answers = json.dumps(answers_dict)
 
 class PeerEvaluation(db.Model):
     """Модель для хранения взаимооценок экспертов"""

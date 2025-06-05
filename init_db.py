@@ -134,8 +134,8 @@ def init_questions():
             
             # Create question object
             try:
-                question = Question(**q)
-                db.session.add(question)
+        question = Question(**q)
+        db.session.add(question)
                 questions_count += 1
             except Exception as e:
                 print(f"Error adding question: {e}")
